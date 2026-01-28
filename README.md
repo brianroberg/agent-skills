@@ -46,24 +46,27 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
 1. **Clone the repository:**
    ```bash
    git clone git@github.com:brianroberg/agent-skills.git
-   cd agent-skills
    ```
 
-2. **Install the plugin in Claude Code:**
-   ```bash
-   claude mcp add-plugin /path/to/agent-skills
-   ```
-
-3. **Configure environment variables** (add to your shell profile):
+2. **Configure environment variables** (add to your shell profile):
    ```bash
    export EMAIL_AGENT_URL="http://localhost:8081"
    export CALENDAR_AGENT_URL="http://localhost:8082"
    ```
 
-4. **Verify installation:**
+3. **Install the plugin in Claude Code:**
    ```bash
    claude
-   # Then use: /agent-status
+   ```
+   Then inside Claude Code, run these commands (use absolute path):
+   ```
+   /plugin marketplace add /absolute/path/to/agent-skills
+   /plugin install agent-skills
+   ```
+
+4. **Verify installation:**
+   ```
+   /agent-status
    ```
 
 ## Configuration
