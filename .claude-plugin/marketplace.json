@@ -5,12 +5,13 @@
   },
   "metadata": {
     "description": "Personal plugins for Claude Code",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "pluginRoot": ".."
   },
   "plugins": [
     {
       "name": "agent-skills",
-      "source": "..",
+      "source": "./",
       "description": "Skills for interacting with email and calendar agents",
       "version": "0.1.0"
     }
