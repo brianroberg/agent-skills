@@ -1,0 +1,9 @@
+{
+  "name": "agent-skills",
+  "description": "Skills for interacting with email and calendar agents",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brian Roberg"
+  },
+  "repository": "https://github.com/brianroberg/agent-skills"
+}
