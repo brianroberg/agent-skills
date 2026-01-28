@@ -61,7 +61,7 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
    Then inside Claude Code, run these commands (use absolute path):
    ```
    /plugin marketplace add /absolute/path/to/agent-skills
-   /plugin install agent-skills
+   /plugin install agent-skills@brianroberg
    ```
 
 4. **Verify installation:**
