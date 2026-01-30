@@ -16,25 +16,92 @@ Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
 ## Usage
 
-When this skill is invoked, run the following bash command with the event description:
+When this skill is invoked, construct an EventCreateRequest and run:
 
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/ask" \
+curl -s -X POST "$CALENDAR_AGENT_URL/calendars/primary/events" \
     -H "Content-Type: application/json" \
-    -d "{\"prompt\": \"Create a calendar event: EVENT_DESCRIPTION_HERE\", \"auto_approve\": true}" \
-    | jq -r 'if .success then .response else "Error: " + .error end'
+    -d '{
+        "summary": "EVENT_TITLE",
+        "start": {
+            "dateTime": "START_DATETIME",
+            "timeZone": "America/New_York"
+        },
+        "end": {
+            "dateTime": "END_DATETIME",
+            "timeZone": "America/New_York"
+        },
+        "description": "OPTIONAL_DESCRIPTION",
+        "location": "OPTIONAL_LOCATION",
+        "attendees": [
+            {"email": "attendee@example.com"}
+        ]
+    }' \
+    | jq .
 ```
 
-Replace `EVENT_DESCRIPTION_HERE` with the user's event description.
+## Request Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `summary` | Yes | Event title |
+| `start.dateTime` | Yes | Start time in ISO 8601 format |
+| `start.timeZone` | Yes | Timezone (default: America/New_York) |
+| `end.dateTime` | Yes | End time in ISO 8601 format |
+| `end.timeZone` | Yes | Timezone (default: America/New_York) |
+| `description` | No | Event description/notes |
+| `location` | No | Event location |
+| `attendees` | No | Array of attendee objects with email |
+
+## Date/Time Formatting
+
+Use ISO 8601 format: `YYYY-MM-DDTHH:MM:SS`
+
+Examples:
+- `2026-01-30T14:00:00` (2pm on Jan 30, 2026)
+- `2026-01-30T09:30:00` (9:30am on Jan 30, 2026)
 
 ## Examples
 
-- "Meeting with team tomorrow at 2pm for 1 hour"
-- "Lunch with Sarah on Friday at noon"
-- "Doctor appointment next Tuesday at 10am"
-- "Project review meeting on 2026-01-25 from 3pm to 4pm"
+**Simple 1-hour meeting:**
+```bash
+curl -s -X POST "$CALENDAR_AGENT_URL/calendars/primary/events" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "summary": "Team standup",
+        "start": {"dateTime": "2026-01-31T09:00:00", "timeZone": "America/New_York"},
+        "end": {"dateTime": "2026-01-31T10:00:00", "timeZone": "America/New_York"}
+    }' \
+    | jq .
+```
+
+**Meeting with attendees:**
+```bash
+curl -s -X POST "$CALENDAR_AGENT_URL/calendars/primary/events" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "summary": "Project review",
+        "start": {"dateTime": "2026-01-31T14:00:00", "timeZone": "America/New_York"},
+        "end": {"dateTime": "2026-01-31T15:00:00", "timeZone": "America/New_York"},
+        "location": "Conference Room A",
+        "attendees": [
+            {"email": "alice@example.com"},
+            {"email": "bob@example.com"}
+        ]
+    }' \
+    | jq .
+```
+
+## Parsing Natural Language
+
+When the user provides natural language like "Meeting with team tomorrow at 2pm for 1 hour":
+
+1. Calculate the actual date/time based on current date
+2. Convert to ISO 8601 format
+3. Calculate end time based on duration (default 1 hour if not specified)
+4. Build the structured request
 
 ## Security Notes
 
-- Claude Code's approval prompt is the security gate - the agent runs with auto_approve=true because Claude Code already approved the action
+- Claude Code's approval prompt is the security gate
 - Events are created in America/New_York timezone by default

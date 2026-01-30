@@ -20,13 +20,16 @@ Requires both environment variables:
 
 When this skill is invoked, run both queries and present the combined results:
 
-### Step 1: Get Calendar Summary
+### Step 1: Get Calendar Briefing
 
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/ask" \
+curl -s -X POST "$CALENDAR_AGENT_URL/prepare-briefing" \
     -H "Content-Type: application/json" \
-    -d '{"prompt": "What is on my calendar today? Note any back-to-back meetings or conflicts.", "auto_approve": true}' \
-    | jq -r 'if .success then .response else "Calendar error: " + .error end'
+    -d '{
+        "briefing_type": "daily",
+        "calendar_id": "primary"
+    }' \
+    | jq -r 'if .success then .briefing else "Calendar error: " + .error end'
 ```
 
 ### Step 2: Get Unread Emails
