@@ -20,6 +20,7 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
 | `/email-label` | Apply labels to emails | Write (requires approval) |
 | `/email-archive` | Archive emails | Write (requires approval) |
 | `/email-mark-read` | Mark emails as read | Write (requires approval) |
+| `/email-triage` | Triage unread emails with bulk actions | Write (requires approval) |
 
 ### Calendar Skills
 | Skill | Description | Access |
@@ -124,6 +125,7 @@ agent-skills/
 │   ├── email-archive/
 │   ├── email-label/
 │   ├── email-mark-read/
+│   ├── email-triage/
 │   └── morning-briefing/
 └── README.md
 ```
