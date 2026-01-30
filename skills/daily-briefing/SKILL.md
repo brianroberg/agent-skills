@@ -18,13 +18,26 @@ Requires `CALENDAR_AGENT_URL` environment variable to be set.
 When this skill is invoked, run:
 
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/ask" \
+curl -s -X POST "$CALENDAR_AGENT_URL/prepare-briefing" \
     -H "Content-Type: application/json" \
-    -d '{"prompt": "Give me a briefing on my schedule for today. Include any important meetings, note if I have back-to-back meetings, and mention any gaps where I have free time.", "auto_approve": true}' \
-    | jq -r 'if .success then .response else "Error: " + .error end'
+    -d '{
+        "briefing_type": "daily",
+        "calendar_id": "primary"
+    }' \
+    | jq -r 'if .success then .briefing else "Error: " + .error end'
 ```
 
-## Difference from /morning-briefing
+## Response Format
 
-- `/daily-briefing` - Calendar only
+The briefing includes:
+- Summary of today's events
+- Key meetings and their times
+- Back-to-back meeting warnings
+- Free time blocks
+- Preparation reminders
+
+## Difference from Other Briefings
+
+- `/daily-briefing` - Calendar only, today
+- `/weekly-briefing` - Calendar only, this week
 - `/morning-briefing` - Calendar + Email combined

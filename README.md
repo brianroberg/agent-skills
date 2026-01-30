@@ -27,8 +27,14 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
 |-------|-------------|--------|
 | `/ask-calendar` | Query calendar events with natural language | Read-only |
 | `/daily-briefing` | Get a summary of today's calendar | Read-only |
+| `/weekly-briefing` | Get a summary of your week's calendar | Read-only |
 | `/check-availability` | Find available time slots | Read-only |
+| `/search-events` | Search events with structured filters | Read-only |
+| `/summarize-event` | Get AI summary of a specific event | Read-only |
+| `/analyze-schedule` | Analyze schedule patterns and workload | Read-only |
 | `/create-event` | Create new calendar events | Write (requires approval) |
+| `/update-event` | Update existing calendar events | Write (requires approval) |
+| `/delete-event` | Delete calendar events | Write (requires approval) |
 
 ### Utility Skills
 | Skill | Description |
