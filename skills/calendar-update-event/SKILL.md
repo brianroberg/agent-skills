@@ -1,5 +1,5 @@
 ---
-name: update-event
+name: calendar-update-event
 description: Update an existing calendar event (requires approval)
 allowed-tools: Bash
 ---

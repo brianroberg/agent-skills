@@ -1,5 +1,5 @@
 ---
-name: delete-event
+name: calendar-delete-event
 description: Delete a calendar event (requires approval)
 allowed-tools: Bash
 ---

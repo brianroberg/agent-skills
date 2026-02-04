@@ -1,5 +1,5 @@
 ---
-name: check-availability
+name: calendar-check-availability
 description: Check calendar availability for a given timeframe
 allowed-tools: Bash
 ---

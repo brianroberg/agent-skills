@@ -1,5 +1,5 @@
 ---
-name: search-events
+name: calendar-search-events
 description: Search calendar events with structured filters
 allowed-tools: Bash
 ---

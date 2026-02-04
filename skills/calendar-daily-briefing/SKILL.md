@@ -1,5 +1,5 @@
 ---
-name: daily-briefing
+name: calendar-daily-briefing
 description: Get a summary of your calendar for today
 allowed-tools: Bash
 ---

@@ -1,5 +1,5 @@
 ---
-name: ask-calendar
+name: calendar-ask
 description: Ask a question about your calendar (read-only)
 allowed-tools: Bash
 ---

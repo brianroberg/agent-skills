@@ -1,5 +1,5 @@
 ---
-name: analyze-schedule
+name: calendar-analyze-schedule
 description: Analyze schedule patterns and workload
 allowed-tools: Bash
 ---

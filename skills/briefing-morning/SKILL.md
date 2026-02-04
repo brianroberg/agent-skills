@@ -1,5 +1,5 @@
 ---
-name: morning-briefing
+name: briefing-morning
 description: Get a comprehensive morning briefing combining calendar and email summaries
 allowed-tools: Bash
 ---

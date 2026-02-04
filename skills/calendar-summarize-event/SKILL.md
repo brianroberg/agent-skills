@@ -1,5 +1,5 @@
 ---
-name: summarize-event
+name: calendar-summarize-event
 description: Get an AI summary of a specific calendar event
 allowed-tools: Bash
 ---

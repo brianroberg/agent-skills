@@ -1,5 +1,5 @@
 ---
-name: weekly-briefing
+name: calendar-weekly-briefing
 description: Get a summary of your calendar for the week
 allowed-tools: Bash
 ---

@@ -1,5 +1,5 @@
 ---
-name: ask-email
+name: email-ask
 description: Ask a question about your emails (read-only)
 allowed-tools: Bash
 ---

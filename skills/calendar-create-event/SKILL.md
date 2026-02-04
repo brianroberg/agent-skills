@@ -1,5 +1,5 @@
 ---
-name: create-event
+name: calendar-create-event
 description: Create a new calendar event (requires approval)
 allowed-tools: Bash
 ---

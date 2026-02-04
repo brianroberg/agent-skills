@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "description": "Skills for interacting with email and calendar agents",
+  "description": "Skills for interacting with email, calendar, and GTD agents",
   "version": "0.2.0",
   "author": {
     "name": "Brian Roberg"
