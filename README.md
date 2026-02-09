@@ -1,22 +1,21 @@
 # Agent Skills
 
-A Claude Code plugin providing skills for interacting with email and calendar agents. These skills enable Claude Code to search emails, manage calendar events, and orchestrate multi-agent workflows.
+A Claude Code plugin providing skills for interacting with email agents, calendar agents, and a GTD task management API. These skills enable Claude Code to search emails, manage calendar events, process GTD inboxes, and orchestrate multi-agent workflows.
 
 ## Overview
 
-This plugin follows a multi-agent architecture where Claude Code acts as an orchestrator, delegating specialized tasks to dedicated agent servers:
+This plugin follows a multi-agent architecture where Claude Code acts as an orchestrator, delegating specialized tasks to dedicated agent servers and APIs:
 
 - **Email Agent** - Handles Gmail operations (search, summarize, label, archive)
 - **Calendar Agent** - Handles Google Calendar operations (query, check availability, create events)
-
-Claude Code uses these skills to coordinate between agents, synthesize information, and present unified responses.
+- **GTD API** - Handles Getting Things Done task management (inbox, next actions, projects, someday/maybe, tickler)
 
 ## Features
 
 ### Email Skills
 | Skill | Description | Access |
 |-------|-------------|--------|
-| `/ask-email` | Search, list, and ask questions about emails | Read-only |
+| `/email-ask` | Search, list, and ask questions about emails | Read-only |
 | `/email-label` | Apply labels to emails | Write (requires approval) |
 | `/email-archive` | Archive emails | Write (requires approval) |
 | `/email-mark-read` | Mark emails as read | Write (requires approval) |
@@ -25,16 +24,23 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
 ### Calendar Skills
 | Skill | Description | Access |
 |-------|-------------|--------|
-| `/ask-calendar` | Query calendar events with natural language | Read-only |
-| `/daily-briefing` | Get a summary of today's calendar | Read-only |
-| `/weekly-briefing` | Get a summary of your week's calendar | Read-only |
-| `/check-availability` | Find available time slots | Read-only |
-| `/search-events` | Search events with structured filters | Read-only |
-| `/summarize-event` | Get AI summary of a specific event | Read-only |
-| `/analyze-schedule` | Analyze schedule patterns and workload | Read-only |
-| `/create-event` | Create new calendar events | Write (requires approval) |
-| `/update-event` | Update existing calendar events | Write (requires approval) |
-| `/delete-event` | Delete calendar events | Write (requires approval) |
+| `/calendar-ask` | Query calendar events with natural language | Read-only |
+| `/calendar-daily-briefing` | Get a summary of today's calendar | Read-only |
+| `/calendar-weekly-briefing` | Get a summary of your week's calendar | Read-only |
+| `/calendar-check-availability` | Find available time slots | Read-only |
+| `/calendar-search-events` | Search events with structured filters | Read-only |
+| `/calendar-summarize-event` | Get AI summary of a specific event | Read-only |
+| `/calendar-analyze-schedule` | Analyze schedule patterns and workload | Read-only |
+| `/calendar-create-event` | Create new calendar events | Write (requires approval) |
+| `/calendar-update-event` | Update existing calendar events | Write (requires approval) |
+| `/calendar-delete-event` | Delete calendar events | Write (requires approval) |
+
+### GTD Skills
+| Skill | Description | Access |
+|-------|-------------|--------|
+| `/gtd-capture` | Capture tasks to GTD inbox with clarification | Write |
+| `/gtd-process-inbox` | Process inbox items into next actions, someday/maybe, tickler | Write |
+| `/gtd-complete` | Mark tasks complete across any GTD list | Write |
 
 ### Utility Skills
 | Skill | Description |
@@ -47,6 +53,7 @@ Claude Code uses these skills to coordinate between agents, synthesize informati
 - [Claude Code](https://github.com/anthropics/claude-code) CLI installed
 - Email agent server running (for email skills)
 - Calendar agent server running (for calendar skills)
+- GTD API accessible (for GTD skills) — endpoint and key configured in `/workspace/TOOLS.md`
 
 ## Installation
 
@@ -85,15 +92,20 @@ Set these environment variables to point to your agent servers:
 | `EMAIL_AGENT_URL` | Email agent server endpoint | `http://localhost:8081` |
 | `CALENDAR_AGENT_URL` | Calendar agent server endpoint | `http://localhost:8082` |
 
+GTD skills read their API endpoint and key from `/workspace/TOOLS.md`. The full API spec is at https://gtd-api.fly.dev/openapi.json.
+
 ## Usage
 
 Once installed, invoke skills in Claude Code using slash commands:
 
 ```
-/ask-email What emails did I get from Alice this week?
-/daily-briefing
-/check-availability Find a 30-minute slot tomorrow afternoon
-/morning-briefing
+/email-ask What emails did I get from Alice this week?
+/calendar-daily-briefing
+/calendar-check-availability Find a 30-minute slot tomorrow afternoon
+/briefing-morning
+/gtd-capture Email Doug about the budget meeting
+/gtd-process-inbox
+/gtd-complete Mark "email Doug" done
 ```
 
 Or describe what you want naturally and Claude Code will select the appropriate skill.
@@ -120,19 +132,28 @@ Changes take effect in the next Claude Code session.
 ```
 agent-skills/
 ├── .claude-plugin/
-│   └── plugin.json       # Plugin manifest
+│   └── plugin.json               # Plugin manifest
 ├── skills/
-│   ├── agent-status/     # Health check skill
-│   ├── ask-calendar/     # Calendar queries
-│   ├── ask-email/        # Email queries
-│   ├── check-availability/
-│   ├── create-event/
-│   ├── daily-briefing/
+│   ├── agent-status/             # Health check skill
+│   ├── briefing-morning/         # Combined calendar + email briefing
+│   ├── calendar-analyze-schedule/
+│   ├── calendar-ask/             # Calendar queries
+│   ├── calendar-check-availability/
+│   ├── calendar-create-event/
+│   ├── calendar-daily-briefing/
+│   ├── calendar-delete-event/
+│   ├── calendar-search-events/
+│   ├── calendar-summarize-event/
+│   ├── calendar-update-event/
+│   ├── calendar-weekly-briefing/
 │   ├── email-archive/
+│   ├── email-ask/                # Email queries
 │   ├── email-label/
 │   ├── email-mark-read/
 │   ├── email-triage/
-│   └── morning-briefing/
+│   ├── gtd-capture/              # Capture tasks to GTD inbox
+│   ├── gtd-complete/             # Mark GTD tasks complete
+│   └── gtd-process-inbox/        # Process inbox → next actions/someday/tickler
 └── README.md
 ```
 

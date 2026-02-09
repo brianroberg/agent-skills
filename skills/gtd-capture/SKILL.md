@@ -1,5 +1,5 @@
 ---
-name: gtd-capture
+name: capture
 description: "Use when the user asks to 'add to inbox', 'capture this', 'remind me to', 'record a task', 'I need to', or when potential action items or commitments surface in conversation."
 ---
 
@@ -53,10 +53,40 @@ No lengthy confirmation. No "anything else?" Just acknowledge and move on.
 
 ## API Reference
 
-Endpoint and credentials in `/workspace/TOOLS.md`.
+Endpoint and credentials in `/workspace/TOOLS.md`. Full API spec at https://gtd-api.fly.dev/openapi.json.
 
+**Capture to inbox:**
 ```
 POST https://gtd-api.fly.dev/inbox
 Header: X-API-Key: [from TOOLS.md]
-Body: { "title": "...", "notes": "..." }
+Body: { "title": "...", "notes": "...", "area_id": int|null, "project_id": int|null }
 ```
+
+The `area_id` and `project_id` fields are optional. When the area is obvious from context, set it at capture time to save a step during processing.
+
+**Areas of responsibility:**
+```
+GET  /areas                — list all areas
+POST /areas                — create area: { "name": "...", "description": "..." }
+GET  /areas/{id}/actions   — list actions in an area
+GET  /areas/{id}/projects  — list projects in an area
+```
+
+**Projects:**
+```
+GET  /projects             — list all projects
+POST /projects             — create: { "title": "...", "outcome": "...", "area_id": int|null }
+GET  /projects/{id}/actions — list actions in a project
+POST /projects/{id}/actions — create action directly in a project
+```
+
+**Other key endpoints:**
+- `GET /inbox` — list inbox items (`?include_completed=true` to show completed)
+- `POST /inbox/{id}/complete` — mark inbox item complete
+- `DELETE /inbox/{id}` — permanently delete inbox item
+- `POST /inbox/{id}/process` — move to next_action, someday_maybe, tickler, or delete
+- `GET /next-actions` — list next actions (`?include_completed=true` to show completed)
+- `POST /next-actions/{id}/complete` — mark action complete
+- `DELETE /next-actions/{id}` — permanently delete next action
+- `POST /someday-maybe/{id}/complete` — mark someday/maybe item complete
+- `POST /tickler/{id}/complete` — mark tickler item complete
