@@ -10,7 +10,7 @@ Check the health of all agent servers. Useful for debugging connectivity issues.
 
 ## Usage
 
-When this skill is invoked, check the health endpoints of both agent servers:
+When this skill is invoked, check each service in turn:
 
 ### Check Email Agent
 
@@ -42,14 +42,29 @@ else
 fi
 ```
 
-### Check GTD API
+### Check Vikunja (the task system)
+
+Brian's task system is a self-hosted Vikunja instance. `$VIKUNJA_URL` is the container
+DNS name on the Docker network; `http://vikunja:3456` is the documented fallback while
+that variable is still being wired up (runbook step B11a). The retired todo-api at
+`gtd-api.fly.dev` is deliberately **not** checked here — it is a read-only archive, and
+reporting it "OK" would say the task system is up when it is not.
+
+Check `GET /api/v1/info`, **not** `/health`. Vikunja serves its single-page frontend on
+the same port and answers *any* unrecognised root path with HTTP 200 and an HTML page —
+so a status-code check on `/health` cannot tell a healthy API from a stray 200. Unknown
+paths under `/api/v1/` correctly return 404. `/api/v1/info` needs no token and returns
+`version` and `frontend_url`.
 
 ```bash
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://gtd-api.fly.dev/health" 2>/dev/null)
-if [ "$STATUS" = "200" ]; then
-    echo "GTD API (https://gtd-api.fly.dev): OK"
+VIKUNJA="${VIKUNJA_URL:-http://vikunja:3456}"
+BODY=$(curl -s -m 10 -w "\n%{http_code}" "$VIKUNJA/api/v1/info" 2>/dev/null)
+STATUS=$(printf '%s' "$BODY" | tail -n 1)
+VERSION=$(printf '%s' "$BODY" | sed '$d' | jq -r '.version // "unknown"' 2>/dev/null)
+if [ "$STATUS" = "200" ] && [ -n "$VERSION" ] && [ "$VERSION" != "unknown" ]; then
+    echo "Vikunja ($VIKUNJA): OK ($VERSION)"
 else
-    echo "GTD API (https://gtd-api.fly.dev): UNREACHABLE (HTTP $STATUS)"
+    echo "Vikunja ($VIKUNJA): UNREACHABLE (HTTP $STATUS)"
 fi
 ```
 
@@ -70,7 +85,7 @@ When all services are running:
 ```
 Email Agent (http://100.x.x.x:8081): OK
 Calendar Agent (http://localhost:8082): OK
-GTD API (https://gtd-api.fly.dev): OK
+Vikunja (http://vikunja:3456): OK (v2.6.0)
 Donor DB (https://donor-management.fly.dev): OK
 ```
 
@@ -78,6 +93,6 @@ When a service is down:
 ```
 Email Agent (http://100.x.x.x:8081): UNREACHABLE (HTTP 000)
 Calendar Agent (http://localhost:8082): OK
-GTD API (https://gtd-api.fly.dev): OK
+Vikunja (http://vikunja:3456): OK (v2.6.0)
 Donor DB (https://donor-management.fly.dev): UNREACHABLE (HTTP 503)
 ```

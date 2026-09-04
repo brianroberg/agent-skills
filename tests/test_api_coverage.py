@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from tests.api_specs import GTD_ENDPOINTS, DONOR_ENDPOINTS, EXCLUDED_ENDPOINTS
+from tests.api_specs import DONOR_ENDPOINTS, EXCLUDED_ENDPOINTS
 from tests.conftest import SKILLS_DIR
 
-ALL_ENDPOINTS = {**GTD_ENDPOINTS, **DONOR_ENDPOINTS}
+ALL_ENDPOINTS = dict(DONOR_ENDPOINTS)
 COVERED_ENDPOINTS = [e for e in ALL_ENDPOINTS if e not in EXCLUDED_ENDPOINTS]
 
 

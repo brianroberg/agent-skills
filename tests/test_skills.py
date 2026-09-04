@@ -85,16 +85,6 @@ def test_skill_documented_in_readme(skill_path: Path, readme_content: str):
 
 KNOWN_ALIASES = {
     # dir name -> allowed frontmatter name(s)
-    "gtd-capture": {"capture", "gtd-capture"},
-    "gtd-process-inbox": {"process-inbox", "gtd-process-inbox"},
-    "gtd-complete": {"complete", "gtd-complete"},
-    "gtd-weekly-review": {"weekly-review", "gtd-weekly-review"},
-    "gtd-projects": {"projects", "gtd-projects"},
-    "gtd-review-actions": {"review-actions", "gtd-review-actions"},
-    "gtd-someday-maybe": {"someday-maybe", "gtd-someday-maybe"},
-    "gtd-tickler": {"tickler", "gtd-tickler"},
-    "gtd-organize": {"organize", "gtd-organize"},
-    "gtd-donor-tasks": {"donor-tasks", "gtd-donor-tasks"},
     "briefing-morning": {"morning-briefing", "briefing-morning"},
 }
 
