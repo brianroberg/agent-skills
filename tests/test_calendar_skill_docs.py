@@ -154,7 +154,10 @@ def test_delete_skill_maps_transport_failure_to_exit_4():
 def test_search_skill_response_format_is_an_event_summary_row():
     """The Response Format example must be the flat EventSummary row, not Google's shape."""
     section = _section(SEARCH_SKILL.read_text(), "## Response Format")
-    assert '"attendees"' not in section and "responseStatus" not in section, (
+    # Pin the JSON *keys*, not the words: the prose legitimately says "no
+    # `attendees` list" and names Google's `responseStatus` as the thing
+    # `calendar_rsvp_state` classifies.
+    assert '"attendees":' not in section and '"responseStatus":' not in section, (
         "Response Format still shows Google's attendees[].responseStatus shape"
     )
     assert '"dateTime"' not in section, "Response Format still nests start/end as {dateTime}"
