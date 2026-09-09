@@ -12,6 +12,20 @@ DONOR_ENDPOINTS = {
     "POST /api/v1/contacts": {"description": "Create contact", "domain": "donor"},
     "PUT /api/v1/contacts/{id}": {"description": "Update contact", "domain": "donor"},
     "DELETE /api/v1/contacts/{id}": {"description": "Delete contact", "domain": "donor"},
+    # Contact sub-resources — brianroberg/sr-assistant#46 (head 162e128). Registered ahead of
+    # deployment; test_donor_spec_in_sync (network) stays red until that PR is deployed.
+    "GET /api/v1/contacts/{contact_id}/addresses": {"description": "List a contact's addresses", "domain": "donor"},
+    "POST /api/v1/contacts/{contact_id}/addresses": {"description": "Add an address (201)", "domain": "donor"},
+    "PATCH /api/v1/contacts/{contact_id}/addresses/{address_id}": {"description": "Partially update an address", "domain": "donor"},
+    "DELETE /api/v1/contacts/{contact_id}/addresses/{address_id}": {"description": "Delete an address (204)", "domain": "donor"},
+    "GET /api/v1/contacts/{contact_id}/emails": {"description": "List a contact's email addresses", "domain": "donor"},
+    "POST /api/v1/contacts/{contact_id}/emails": {"description": "Add an email address (201)", "domain": "donor"},
+    "PATCH /api/v1/contacts/{contact_id}/emails/{email_id}": {"description": "Partially update an email address", "domain": "donor"},
+    "DELETE /api/v1/contacts/{contact_id}/emails/{email_id}": {"description": "Delete an email address (204)", "domain": "donor"},
+    "GET /api/v1/contacts/{contact_id}/phones": {"description": "List a contact's phone numbers", "domain": "donor"},
+    "POST /api/v1/contacts/{contact_id}/phones": {"description": "Add a phone number (201)", "domain": "donor"},
+    "PATCH /api/v1/contacts/{contact_id}/phones/{phone_id}": {"description": "Partially update a phone number", "domain": "donor"},
+    "DELETE /api/v1/contacts/{contact_id}/phones/{phone_id}": {"description": "Delete a phone number (204)", "domain": "donor"},
     # Gifts
     "GET /api/v1/gifts": {"description": "List gifts", "domain": "donor"},
     "GET /api/v1/gifts/{id}": {"description": "Get gift detail", "domain": "donor"},
