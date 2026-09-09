@@ -91,9 +91,19 @@ curl -s -X DELETE "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
 
 ### Reply draft
 1. User: "Reply to that email from Bob"
-2. First, get the original message headers (use `/search` or `/ask-about` to find the message)
-3. Create draft with `in_reply_to` set to the original Message-ID and `references` for threading
-4. Gmail will thread the reply correctly when sent
+2. First, find the original message with `/search` (see the `email-ask` skill for the
+   gated call). The fields you need from its `MessageSummary`:
+   - `from_addr` — the raw `From:` header (`Name <addr>` form when a display name is
+     present); the address to reply **to** comes from here. There is no field named from;
+     `.from` is `null` on every message (observed 2026-08-14: a draft addressed to the
+     wrong person)
+   - `rfc822_message_id` — the angle-bracketed RFC 2822 Message-ID, which is what
+     `in_reply_to` takes. **Not `id`**, which is the Gmail message id and will not thread
+   - `thread_id` — optional; `in_reply_to` alone resolves the Gmail thread automatically
+3. Create draft with `to` set to the sender's address from `from_addr`, `in_reply_to` set
+   to `rfc822_message_id`, and (optionally) `references` for threading
+4. The response's `thread_attached: true` and `thread_id` confirm the draft joined the
+   conversation; Gmail will thread the reply correctly when sent
 
 ### Edit flow
 1. User: "Draft an email to the team about Friday's meeting"
