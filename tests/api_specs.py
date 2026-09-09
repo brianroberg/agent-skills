@@ -55,6 +55,7 @@ DONOR_ENDPOINTS = {
     "GET /api/v1/sync/status": {"description": "Get sync status", "domain": "donor"},
     "GET /api/v1/sync/pending": {"description": "List pending sync items", "domain": "donor"},
     "POST /api/v1/sync/pending/{id}/resolve": {"description": "Resolve pending sync item", "domain": "donor"},
+    "POST /api/v1/sync/trigger-addresses": {"description": "Pull contact addresses from DonorHub", "domain": "donor"},
     # Export
     "POST /api/v1/export/mailing-list": {"description": "Export mailing list CSV", "domain": "donor"},
 }
