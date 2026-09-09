@@ -173,9 +173,8 @@ Pass **`timeout: 450000`** on the Bash tool call (see *Read this before you
 delete anything*, point 1). Usage is `calendar-delete-event.sh <event_id>
 [calendar_id]`; `calendar_id` defaults to `robergb@dm.org` and is URL-encoded by
 the script, so pass it raw (`robergb@dm.org`, not `robergb%40dm.org`) if you
-name it. The script issues the one request it is scoped to — `DELETE
-/calendars/{calendar_id}/events/{event_id}` on calendar-agent — and refuses to
-do anything else.
+name it. The script is tightly scoped: the only request it can issue is
+`DELETE /calendars/{calendar_id}/events/{event_id}` on calendar-agent.
 
 **Why the wrapper and not curl.** Claude Code's auto-mode permission classifier
 refuses a bare `curl -X DELETE` against the calendar agent as
