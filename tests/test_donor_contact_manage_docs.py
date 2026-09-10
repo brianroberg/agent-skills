@@ -3,8 +3,10 @@
 Pins the skill to the contract of brianroberg/sr-assistant#46 (head ``162e128``,
 contact address/email/phone sub-resources) and to facts already true of the
 deployed donor API: the address keys are ``street_address`` / ``postal_code``
-(never ``street`` / ``zip``), the type strings are a fixed list with no
-``work``, and ``PUT /api/v1/contacts/{id}`` takes no nested arrays at all.
+(the live ``AddressCreate`` schema has no ``street`` / ``zip`` key, and does not
+forbid unknown keys, so the old keys were dropped silently on create), the type
+strings are a fixed list with no ``work``, and ``PUT /api/v1/contacts/{id}``
+takes no nested arrays at all.
 These tests read the SKILL.md only; they make no network calls.
 """
 
@@ -62,8 +64,8 @@ def test_address_keys_are_the_api_keys():
     assert "street_address" in text
     assert "postal_code" in text
     for wrong in ("street", "zip"):
-        assert not re.search(rf'"{wrong}"\s*:', text), f'uses the key "{wrong}", which the API has never accepted'
-        assert not re.search(rf"`{wrong}`", text), f"documents a `{wrong}` key, which the API has never accepted"
+        assert not re.search(rf'"{wrong}"\s*:', text), f'uses the key "{wrong}", which the live schema does not define'
+        assert not re.search(rf"`{wrong}`", text), f"documents a `{wrong}` key, which the live schema does not define"
 
 
 # ── 3. The #46 sub-resource routes are documented with #46's path parameters ──

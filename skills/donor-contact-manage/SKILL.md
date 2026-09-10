@@ -17,8 +17,8 @@ addresses / emails / phones, and manage contact groups.
 ## Vocabulary the API actually accepts
 
 These are the values and keys the API defines (`schemas/contact_subresources.py` at
-brianroberg/sr-assistant#46, head `162e128`; the address keys have been these since the
-schema was written — the API has never accepted `"street"` or `"zip"`):
+brianroberg/sr-assistant#46, head `162e128`; the address keys match the live
+`AddressCreate` schema, which has no street or zip key):
 
 - `address_type` — one of `home`, `business`, `other`, `spouse_business`
 - `phone_type` — one of `home`, `mobile`, `business`, `spouse_mobile`
@@ -30,10 +30,13 @@ schema was written — the API has never accepted `"street"` or `"zip"`):
 
 A value outside these lists — notably *work*, which an earlier version of this skill
 documented for all three, and *other* for phones and emails — is rejected with a **422** by
-the sub-resource routes below. `POST /api/v1/contacts`'s nested lists still accept any
-string (deliberately left alone by #46; tightening is sr-assistant #19), but a row stored
-with an undocumented value will not round-trip through GET-then-PATCH, so send only the
-listed values there too.
+the sub-resource routes below. `POST /api/v1/contacts` is looser in two ways, and both
+failures are **silent**: its nested lists accept any type string (deliberately left alone
+by #46; tightening is sr-assistant #19), and its nested schemas do not forbid unknown keys
+(no `additionalProperties: false` in the live `openapi.json`), so the old street / zip keys
+produced a 201 and an address with no street or postal code rather than an error. A row
+stored with an undocumented type will not round-trip through GET-then-PATCH either. Send
+only the listed keys and values on create as well.
 
 ## Contact Operations
 
@@ -170,8 +173,8 @@ key is a 422 (`extra="forbid"`), so a typo writes nothing.
   address; add another or delete this one". Add a row or delete instead.
 - **409** on a write that loses a race against a concurrent promotion — re-read the
   collection and retry.
-- **404** for a row reached through the wrong contact's URL; a write can never touch
-  another contact's row.
+- **404** for a row reached through the wrong contact's URL; #46's tests pin that a PATCH
+  or DELETE through the wrong contact cannot reach another contact's row.
 - **422** for a type value outside the lists above or an unknown key.
 - The contact row itself (`file_as`, names, `updated_at`) is untouched by a sub-resource
   write.
@@ -274,7 +277,8 @@ Body: {
 
 - Agent API keys cannot read or write `confidential_notes` on contacts — this is by design.
 - `PUT /api/v1/contacts/{id}` updates the contact's own fields only and leaves omitted
-  fields alone; it never touches addresses, phones or emails. Those are corrected one row
+  fields alone; it does not touch addresses, phones or emails (`ContactUpdate` has no such
+  keys; #46's `test_update_contact_cannot_touch_nested_rows` pins it). Those are corrected one row
   at a time through the sub-resource routes above (once sr-assistant#46 is deployed).
 - Always diff a donor write; never trust the response status. The contact wrapper prints
   the diff for you.
