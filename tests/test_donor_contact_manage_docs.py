@@ -79,7 +79,8 @@ def test_subresource_routes_documented():
             ("PATCH", rf"{base}/\{{{row}\}}"),
             ("DELETE", rf"{base}/\{{{row}\}}"),
         ):
-            assert re.search(rf"\b{method}\s+{path}\b", text), f"missing route {method} {path}"
+            # (?!\S) not \b: a path ending in "}" has no word boundary before a space.
+            assert re.search(rf"\b{method}\s+{path}(?!\S)", text), f"missing route {method} {path}"
 
 
 def test_primary_rule_and_both_409s_are_stated():
