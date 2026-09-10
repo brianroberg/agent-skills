@@ -26,15 +26,17 @@ calendar-agent waits `PROXY_CONFIRM_TIMEOUT` seconds for that answer (default
 verify — another read budget of up to 30s. **A delete that sits there for four
 minutes is working normally, not hung.** Do not kill it, do not retry it (a retry
 enqueues a *second* approval request for the same operation), and do not report
-it as failed. Give curl `--max-time 420` so it outlives the server's own budget.
+it as failed. The wrapper script gives curl `--max-time 420` so it outlives the
+server's own budget.
 
-🚨 **You must also pass `timeout: 450000` on the Bash tool call that runs it.** The
-Bash tool's own timeout defaults to **120000 ms** (max 600000) — *shorter than the
-operator's approval window*. At the default the tool kills the call at two minutes,
-curl never prints its `%{http_code}`, and you are left in exactly the ambiguous
-"did it happen?" state this contract exists to remove, while the operator's approval
-lands at minute three and the deletion goes through anyway. `--max-time 420` without
-`timeout: 450000` buys nothing.
+🚨 **You must pass `timeout: 450000` on the Bash tool call that runs the wrapper
+script.** The Bash tool's own timeout defaults to **120000 ms** (max 600000) —
+*shorter than the operator's approval window*. At the default the tool kills the
+call at two minutes, the script never prints its outcome line or exit code, and
+you are left in exactly the ambiguous "did it happen?" state this contract exists
+to remove, while the operator's approval lands at minute three and the deletion
+goes through anyway. The script's `--max-time 420` without `timeout: 450000` on
+the tool call buys nothing.
 
 **2. There are three outcomes, not two.** Success, failure, and **unknown**. An
 unknown deletion may still be applied minutes later when the operator gets to it.
@@ -158,38 +160,69 @@ curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVE
 
 Present summary, time, location and attendees, and ask before deleting.
 
-### Step 3: Delete, capturing status and body
+### Step 3: Delete — run the wrapper script, standalone, with the long timeout
 
-In Brian's assistant workspace, prefer the whitelisted wrapper script
-`scripts/calendar-delete-event.sh <event_id> [calendar_id]`: a bare
-`curl -X DELETE` is refused there by the permission classifier as
-`[Modify Shared Resources]`, and the wrapper carries the allow rule. Invoke it as a
-**standalone** Bash command — wrapping it in a compound command (`echo …; script …`)
-stops the allow rule matching and the whole line gets classified. The wrapper
-implements the same contract described here; rewriting this skill fully around it
-is tracked separately as agent-skills issue #3.
-
-Where no wrapper exists, the raw call is:
+Deletion goes through the whitelisted wrapper script in Brian's assistant
+workspace, **not** a hand-written curl:
 
 ```bash
-resp=$(curl -sS --max-time 420 -w '\n%{http_code}' \
-    -X DELETE "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID")
-rc=$?
-code="${resp##*$'\n'}"
-body="${resp%$'\n'*}"
-if [ "$rc" -ne 0 ]; then
-    echo "UNKNOWN: no response (curl exit $rc). The deletion may still be applied."
-else
-    echo "HTTP $code"
-    printf '%s' "$body" | jq '{success, outcome, message, error}'
-fi
+/workspace/scripts/calendar-delete-event.sh EVENT_ID
 ```
 
-Then branch on `outcome` (preferred) or `code` (fallback), per the tables above.
+Pass **`timeout: 450000`** on the Bash tool call (see *Read this before you
+delete anything*, point 1). Usage is `calendar-delete-event.sh <event_id>
+[calendar_id]`; `calendar_id` defaults to `robergb@dm.org` and is URL-encoded by
+the script, so pass it raw (`robergb@dm.org`, not `robergb%40dm.org`) if you
+name it. The script is tightly scoped: the only request it can issue is
+`DELETE /calendars/{calendar_id}/events/{event_id}` on calendar-agent.
+
+**Why the wrapper and not curl.** Claude Code's auto-mode permission classifier
+refuses a bare `curl -X DELETE` against the calendar agent as
+`[Modify Shared Resources]`; the wrapper carries an explicit allow rule in
+`.claude/settings.local.json`. That rule matches the *whole* command string, so
+**invoke the script as a standalone Bash command** — wrapping it in a compound
+command (`echo …; script …; curl …`) stops the rule matching and the classifier
+evaluates the whole line, and may block it. Do the finding (Step 1), the
+confirmation (Step 2) and the verification (Step 4) as separate calls.
+
+#### What the wrapper prints and returns
+
+One line, then an exit code that encodes the outcome. The line looks like:
+
+```
+DELETE robergb@dm.org event EVENT_ID -> HTTP 200, outcome: succeeded (Event deleted successfully)
+```
+
+The script reads `outcome` from the `ActionResponse` envelope (see *The outcome
+contract*); only when the body carries no `outcome` string does it fall back to
+the HTTP status, as: `200`/`204` → succeeded, `504`/`408` → unknown, any other
+`4xx`/`5xx` → failed, anything else → unknown — and a `200` whose body is not
+parseable JSON is demoted to unknown, because it proves nothing.
+
+| Exit | Outcome | What to do next |
+|------|---------|-----------------|
+| `0` | **succeeded** — calendar-agent re-read the event and verified it is gone | Report the deletion done |
+| `2` | **usage / config error** — missing `event_id`, or `CALENDAR_AGENT_URL` unset. Nothing was sent | Fix the invocation and run it again |
+| `3` | **failed** — definitively not deleted; nothing is outstanding | Read the printed `HTTP <code>` and the message: `403` operator rejected or policy blocked — **do not retry**, tell the user; `404` no such event or calendar — check the id; `422` malformed request — correct it and send again |
+| `4` | **UNKNOWN** — the outcome was not established; the delete may still complete after a late operator approval. Also what a curl transport timeout or connection failure maps to | **Do NOT retry and do NOT issue a compensating create.** Re-read the event (Step 4) before doing anything else, and re-read again later if it is still present |
+| `5` | **not_attempted** — the envelope said `not_attempted`: never sent, nothing changed | Treat as not done; re-run once whatever blocked it has resolved |
+
+Exit `3` means *definitively not deleted*; it does **not** mean *retry*. Whether a
+second attempt is appropriate depends on the status the line reports — a `403`
+is the operator saying no, and re-sending it re-asks the same question.
+
+Exit `4` is the code the whole script exists for. On 2026-08-07 a delete reported
+as failed completed minutes later when the operator approved it out of band,
+while a compensating create had already run, leaving overlapping events. A
+transport timeout is treated the same way: curl giving up is **not** evidence the
+proxy gave up.
+
+Then branch on the exit code per the table; the outcome and status tables above
+explain what the underlying envelope meant.
 
 ### Step 4: Verify before you report or act
 
-Whenever the outcome is anything other than `succeeded`, re-read the event. The
+Whenever the wrapper exits with anything other than `0`, re-read the event. The
 re-read, not the delete's own answer, is the evidence:
 
 ```bash
@@ -216,7 +249,11 @@ fi
   unknown.
 - Anything else → **inconclusive**. Report unknown; do not act.
 
-## Response format
+## The envelope behind the exit code
+
+The wrapper does not print the JSON body; it condenses it to the one line and the
+exit code above. For reference, the `ActionResponse` it is reading in the exit-4
+case looks like:
 
 ```json
 {
@@ -228,7 +265,8 @@ fi
 ```
 
 There is no `event_id` field in this envelope — an older version of this skill
-claimed one. The fields are `success`, `outcome`, `message`, `error`.
+claimed one. The fields are `success`, `outcome`, `message`, `error`; the
+wrapper's parenthetical is `error` if set, else `message`.
 
 ## Safety notes
 
@@ -237,7 +275,7 @@ claimed one. The fields are `success`, `outcome`, `message`, `error`.
 - If the event has attendees, cancellation notices may be sent.
 - Claude Code's approval prompt is a gate on issuing the request; the operator
   approval at the proxy is a second, independent gate on the request taking effect.
-- Never retry a mutation that timed out. Verify, then decide.
+- Never retry a mutation that came back exit `4` / outcome `unknown`. Verify, then decide.
 
 ## Cancellation vs deletion
 

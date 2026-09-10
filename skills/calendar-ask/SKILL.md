@@ -21,6 +21,7 @@ Choose the appropriate endpoint based on the user's question:
 |---------------|----------|----------|
 | List events | `GET /calendars/robergb%40dm.org/events` | "What's on my calendar today/this week?" |
 | Search events | `POST /search` | "Find meetings with Alice" or keyword searches |
+| RSVP / organizer | `POST /search` or `GET .../events`, then read the row's `calendar_rsvp_state` / `calendar_is_organizer` | "Have I responded to X?", "Who organizes X?" — on `robergb@dm.org` these are Brian's; on another calendar they are **that calendar's**. Rows without these keys predate calendar-agent PR #11: fall back to `POST /ask-about`. Field meanings: `calendar-search-events` skill |
 | Ask about event | `POST /ask-about` | "What's the agenda for my 2pm meeting?" |
 | Find free time | `POST /find-free-time` | "When am I free tomorrow?" |
 
@@ -136,6 +137,7 @@ fi
 - "What's on my schedule today?" → Use GET /calendars/robergb%40dm.org/events with today's date range
 - "When am I free tomorrow afternoon?" → Use POST /find-free-time
 - "Find all meetings with Project Alpha" → Use POST /search with query
+- "Have I responded to the Thursday review?" → POST /search on `robergb@dm.org`, read `calendar_rsvp_state` on the row (see the `calendar-search-events` skill for the values)
 - "What's the location for my 3pm meeting?" → First list events, then POST /ask-about
 
 ## Security Notes
