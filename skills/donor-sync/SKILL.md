@@ -28,6 +28,20 @@ Header: X-API-Key: [from TOOLS.md]
 
 Runs the donation import from DonorHub. Returns immediately with a job status — the actual import runs asynchronously.
 
+### Pull Addresses from DonorHub
+
+```
+POST https://donor-management.fly.dev/api/v1/sync/trigger-addresses
+Header: X-API-Key: [from TOOLS.md]
+```
+
+Pulls contact addresses **from** DonorHub (the upstream donation-processing system, which
+Brian does not control) into the donor management system. This is the only address-related
+route the API has: addresses cannot be created or edited through the contact endpoints, so
+a wrong address cannot be corrected from here — see sr-assistant issue #21. The sync only
+*creates* an address where a contact has none; a differing remote value becomes a pending
+item for manual review rather than an overwrite.
+
 ### Check Sync Status
 
 ```
@@ -155,6 +169,7 @@ Base URL: `https://donor-management.fly.dev`
 **Sync:**
 ```
 POST /api/v1/sync/trigger              — trigger DonorHub sync
+POST /api/v1/sync/trigger-addresses    — pull contact addresses from DonorHub
 GET  /api/v1/sync/status               — connection state + sync log
 GET  /api/v1/sync/pending              — items needing manual review
 POST /api/v1/sync/pending/{id}/resolve — resolve a pending item

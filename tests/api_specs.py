@@ -55,13 +55,37 @@ DONOR_ENDPOINTS = {
     "GET /api/v1/sync/status": {"description": "Get sync status", "domain": "donor"},
     "GET /api/v1/sync/pending": {"description": "List pending sync items", "domain": "donor"},
     "POST /api/v1/sync/pending/{id}/resolve": {"description": "Resolve pending sync item", "domain": "donor"},
+    "POST /api/v1/sync/trigger-addresses": {"description": "Pull contact addresses from DonorHub", "domain": "donor"},
     # Export
     "POST /api/v1/export/mailing-list": {"description": "Export mailing list CSV", "domain": "donor"},
 }
 
-# Endpoints intentionally NOT covered by skills (admin/infra only)
+# Endpoints intentionally NOT covered by skills, each with the reason it is excluded.
+#
+# Keys are written exactly as the live OpenAPI spec writes them (including its own
+# placeholder names, e.g. `{contact_id}`); test_openapi_sync.py normalizes placeholder
+# names before comparing, so `{contact_id}` here and `{id}` in DONOR_ENDPOINTS match.
+# A reason is required: an exclusion with no stated reason is indistinguishable from an
+# oversight a year later.
 EXCLUDED_ENDPOINTS = {
     # OAuth flow — browser-based, not suitable for CLI skill
-    "GET /api/v1/sync/oauth/authorize",
-    "GET /api/v1/sync/oauth/callback",
+    "GET /api/v1/sync/oauth/authorize": "OAuth flow — browser-based, not usable from a CLI skill",
+    "GET /api/v1/sync/oauth/callback": "OAuth flow — browser-based, not usable from a CLI skill",
+    # Infrastructure — no skill will ever call these
+    "GET /": "Infrastructure — service root/index page, nothing for a skill to call",
+    "GET /health": "Infrastructure — liveness probe, nothing for a skill to call",
+    # Browser session auth — skills authenticate with the X-API-Key header instead
+    "GET /login": "Browser session auth — skills use the X-API-Key header, not a login form",
+    "POST /login": "Browser session auth — skills use the X-API-Key header, not a login form",
+    "GET /logout": "Browser session auth — skills use the X-API-Key header, not a login form",
+    # Unversioned aliases — legacy/convenience duplicates of the /api/v1 routes.
+    # Skills always use the /api/v1 form, which is the one the registry above covers.
+    "GET /contacts": "Unversioned alias of GET /api/v1/contacts",
+    "GET /contacts/{contact_id}": "Unversioned alias of GET /api/v1/contacts/{id}",
+    "GET /groups": "Unversioned alias of GET /api/v1/groups",
+    "GET /groups/{group_id}": "Unversioned alias of GET /api/v1/groups/{id}",
+    "GET /sync/pending": "Unversioned alias of GET /api/v1/sync/pending",
+    "GET /sync/status": "Unversioned alias of GET /api/v1/sync/status",
+    "POST /sync/trigger": "Unversioned alias of POST /api/v1/sync/trigger",
+    "POST /sync/pending/{item_id}/resolve": "Unversioned alias of POST /api/v1/sync/pending/{id}/resolve",
 }
