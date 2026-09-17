@@ -126,8 +126,22 @@ curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
 When user says "tomorrow", "next week", etc.:
 
 1. Calculate actual dates based on current date
-2. Use ISO 8601 format with timezone: `YYYY-MM-DDTHH:MM:SS-05:00`
-3. For full day, use `00:00:00` to `23:59:59`
+2. Use ISO 8601 format with a UTC offset (`YYYY-MM-DDTHH:MM:SS±HH:MM`). **Derive the
+   offset for the date in question; do not hard-code it.** America/New_York is `-04:00`
+   from mid-March to early November (EDT) and `-05:00` the rest of the year (EST); a
+   window written with the wrong one is shifted by an hour. The container's `date`
+   resolves it:
+
+   ```bash
+   TZ=America/New_York date -d '2026-09-14 00:00' -Iseconds     # 2026-09-14T00:00:00-04:00
+   TZ=America/New_York date -d '2026-09-14 23:59:59' -Iseconds  # 2026-09-14T23:59:59-04:00
+   ```
+3. For full day, use `00:00:00` to `23:59:59` (with that day's offset). All-day
+   events match any window that overlaps their date, evaluated in the calendar's own
+   time zone (`America/New_York` for Brian's calendars), so a local-offset day window
+   returns exactly that day's all-day events. A UTC-midnight window (`00:00:00Z` to
+   `23:59:59Z`) starts at 20:00 local the evening before and so also returns the
+   previous day's all-day events.
 
 ## Non-200 responses
 
