@@ -137,11 +137,18 @@ When user says "tomorrow", "next week", etc.:
    TZ=America/New_York date -d '2026-09-14 23:59:59' -Iseconds  # 2026-09-14T23:59:59-04:00
    ```
 3. For full day, use `00:00:00` to `23:59:59` (with that day's offset). All-day
-   events match any window that overlaps their date, evaluated in the calendar's own
-   time zone (`America/New_York` for Brian's calendars), so a local-offset day window
-   returns exactly that day's all-day events. A UTC-midnight window (`00:00:00Z` to
-   `23:59:59Z`) starts at 20:00 local the evening before and so also returns the
-   previous day's all-day events.
+   events match any window that overlaps their date, evaluated in **the calendar's
+   own time zone** — read it from `GET /calendars/{id}` → `.calendar.timeZone`
+   before trusting a day window on a calendar you have not checked. Verified
+   2026-09-17: `robergb@dm.org`, Brian's Discipleship Team, Brian — Earmarks and DM
+   HQ Out of Office are `America/New_York`, so a local-offset day window returns
+   exactly that day's all-day events there. **The Family import calendar
+   (`0d1s2v5qummkl36t4nk0d8fakouaj72l@import.calendar.google.com`) is `UTC`**: its
+   all-day events span 20:00–20:00 EDT, so a local-offset window for the *previous*
+   day also returns them (a 9/17 window returned the 9/18 "Mother-daughter date"),
+   and a window after 20:00 local on the day itself does not. On that calendar, read
+   the `start` date of an `is_all_day` row rather than inferring the day from the
+   window; its timed events also come back as `Z` timestamps, not local.
 
 ## Non-200 responses
 
