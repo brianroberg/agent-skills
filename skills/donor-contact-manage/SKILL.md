@@ -42,6 +42,27 @@ A row read back from GET is **not** a valid write body: it also carries `id` and
 `contact_id` (and `address_block` for addresses), which the sub-resource routes reject
 with a 422. Send only the keys you are changing.
 
+## Writes and the permission check
+
+**Send the write when Brian asked for that specific change.** Every write in this skill
+except the contact PUT is a plain request with the agent key; `PUT /api/v1/contacts/{id}`
+goes through its wrapper (see *Update a Contact's own fields*).
+
+**If the permission check refuses a write, do not retry it another way** (another tool, a
+script, a reworded command). Write out the exact change — route, ids and body — and hand
+it to Brian.
+
+What that rests on: on 2026-09-24 the assistant sent these as raw `curl` from its main
+session, each named by Brian, and none was refused or needed approval — contact create and
+delete, address POST / PATCH / DELETE, group create / rename / delete, and adding and
+removing group members (the request log is in the commit that added this section). The
+email and phone routes were not tried. The permission check's rules are not known, so other
+sessions, subagents, untried routes and writes Brian did not name may be treated
+differently: a `POST /api/v1/sync/trigger` was refused on 2026-09-22 (sr-assistant#67,
+which does not say how it was requested).
+
+No wrapper means no automatic diff: GET the record before and after a write and compare.
+
 ## Contact Operations
 
 ### Create a Contact
@@ -106,8 +127,9 @@ takes the contact's own fields only — `ContactUpdate` has no `addresses`, `pho
 `emails` keys, so a nested list in the body does not update those rows. Address, email
 and phone corrections go through the sub-resource routes in the next section.
 
-Do not issue this PUT with raw `curl` — it is classifier-blocked. Use the sanctioned
-wrapper, which is pre-approved by an allow rule in `.claude/settings.local.json`:
+Send this PUT through the sanctioned wrapper, not raw `curl`: a raw PUT has been refused
+by the permission check before (recorded in `/workspace/TOOLS.md`), and the wrapper is
+pre-approved by an allow rule in `.claude/settings.local.json`:
 
 ```
 /workspace/scripts/donor-update-contact.sh <contact_id> '<json_object>'
@@ -201,17 +223,10 @@ review item (sr-assistant #44 defines how that gets resolved). A DELETE opens a 
 permanent if the re-POST never happens — in which a sync run recreates the address from
 DonorHub.
 
-**How to call them from here:**
-
-- The `GET` list routes are reads and can be issued with `curl` as usual.
-- **Raw `curl` writes to this API are classifier-blocked** (`POST`, `PATCH`, `DELETE`
-  alike — the same block that made the contact wrapper necessary). The only existing
-  wrapper, `/workspace/scripts/donor-update-contact.sh`, is deliberately scoped to
-  `PUT /api/v1/contacts/{id}` and cannot reach these routes. **Sub-resource writes need
-  new wrapper scripts plus allow rules in `.claude/settings.local.json` that do not exist
-  yet** — and the allow rule is Brian's to add, since editing that file is itself blocked.
-  Until they exist, do not attempt a raw `curl` write: state the exact change needed
-  (contact id, collection, row id, fields) and hand it to Brian.
+**How to call them from here:** as plain requests, like the rest of this skill (see
+*Writes and the permission check*). The contact wrapper, `/workspace/scripts/donor-update-contact.sh`,
+is scoped to `PUT /api/v1/contacts/{id}` and cannot reach these routes, so diff by hand:
+GET the collection before and after the write and compare the rows.
 
 ### Delete a Contact
 
@@ -220,7 +235,22 @@ DELETE https://donor-management.fly.dev/api/v1/contacts/{id}
 Header: X-API-Key: [from TOOLS.md]
 ```
 
-**Confirm before deleting.** This removes the contact and disassociates (but does not delete) their gifts, history, and tasks. This action cannot be undone.
+**Confirm before deleting, and say what will be lost.** A delete that succeeds also
+permanently deletes the contact's gifts (with their splits), pledges, addresses, emails
+and phones, and its DonorHub donor link, in the same request. Its history entries, tasks
+and groups are kept; the contact is unlinked from each of them. None of it can be undone.
+If the contact was linked to DonorHub, the next gift the DonorHub sync imports for that
+donor creates a new contact holding only a name. (sr-assistant `models/contact.py` at
+`b9d1f13`: those collections are `cascade="all, delete-orphan"`; history, tasks and
+groups are joined through link tables.) Before asking, check
+`GET /api/v1/contacts/{id}/summary` — its `giving` block has the lifetime gift count and
+total that the delete would remove.
+
+**A contact with gifts imported by the DonorHub sync cannot be deleted** at `b9d1f13`: the
+request fails with a 500 (a foreign-key error between those gifts and the DonorHub donor
+link) and nothing is deleted. Reproduced against a copy of the server code, not tried on
+the live API. Do not work around it — for example by deleting the gifts or the link
+first; tell Brian.
 
 ## Group Operations
 
@@ -248,18 +278,27 @@ Returns the group and its member contacts.
 POST https://donor-management.fly.dev/api/v1/groups
 Header: X-API-Key: [from TOOLS.md]
 Body: {
-  "name": "Board Members",
-  "description": "Current board of directors"
+  "name": "Board Members"
 }
 ```
+
+`name` is required. Optional: `parent_group_id` (nests it under another group; 400 if that
+group does not exist) and `contact_ids` (initial members; 400 if any id does not exist).
+Groups have no description field. The group schemas ignore keys they do not define, so a
+`description`, or a misspelt optional key (`contact_idz` leaves the group with no
+members), gets a 201 and is silently dropped (sr-assistant `schemas/group.py` at
+`b9d1f13`). A missing or misspelt `name` is a 422.
 
 ### Update a Group
 
 ```
 PUT https://donor-management.fly.dev/api/v1/groups/{id}
 Header: X-API-Key: [from TOOLS.md]
-Body: { "name": "...", "description": "..." }
+Body: { "name": "..." }
 ```
+
+Takes `name` and/or `parent_group_id`; omitted keys are left alone. Unknown keys are
+dropped silently, as on create.
 
 ### Delete a Group
 
@@ -292,13 +331,15 @@ Body: {
 
 ## Important Notes
 
-- Agent API keys cannot read or write `confidential_notes` on contacts — this is by design.
+- Agent API keys cannot read or write `confidential_notes`, a field on history entries and
+  tasks (contacts have none): it is left out of responses and silently dropped from writes.
+  This is by design.
+- Always diff a donor write; never trust the response status. The contact wrapper prints
+  the diff for you; for every other write, GET the record before and after and compare.
 - `PUT /api/v1/contacts/{id}` updates the contact's own fields only and leaves omitted
   fields alone; it does not touch addresses, phones or emails (`ContactUpdate` has no such
   keys; #46's `test_update_contact_cannot_touch_nested_rows` pins it). Those are corrected one row
   at a time through the sub-resource routes above (sr-assistant#46).
-- Always diff a donor write; never trust the response status. The contact wrapper prints
-  the diff for you.
 - The `file_as` field controls sort order. Convention: "LastName, FirstName" for individuals, org name for organizations.
 
 ## API Reference
