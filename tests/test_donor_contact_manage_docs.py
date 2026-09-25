@@ -202,3 +202,12 @@ def test_confidential_notes_is_scoped_to_history_and_tasks():
     )
     rest = re.sub(r"(?i)\(?contacts have (?:none|no such field)\)?|not (?:on|a field of) (?:a )?contacts?", "", bullets[0])
     assert not re.search(r"(?i)\bcontact", rest), "puts confidential_notes on contacts, which have no such field"
+
+
+def test_patch_not_delete_rationale_covers_both_cases():
+    """contact_subresources.py: deleting the primary promotes a successor and a re-POST is not primary;
+    deleting the only row leaves no primary, which the address sync fills from DonorHub."""
+    section = " ".join(_section(_text(), "Addresses, emails and phones (sub-resource routes)").split())
+    assert "promotes another" in section and "only address" in section, (
+        "the PATCH-not-DELETE rationale does not cover both the several-address and the only-address case"
+    )

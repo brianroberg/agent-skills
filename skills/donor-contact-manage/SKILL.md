@@ -215,13 +215,15 @@ key is a 422 (`extra="forbid"`), so a typo writes nothing.
 - The contact row itself (`file_as`, names, `updated_at`) is untouched by a sub-resource
   write.
 
-**To correct an address, PATCH it — do not DELETE and re-POST.** The DonorHub address sync
-compares its record with the contact's primary address and, when the contact has no
-primary address, creates one from DonorHub's (possibly stale) record. A PATCH keeps the row
-and its id in place, so a differing DonorHub value is only queued as an `address_conflict`
-review item (sr-assistant #44 defines how that gets resolved). A DELETE opens a window —
-permanent if the re-POST never happens — in which a sync run recreates the address from
-DonorHub.
+**To correct an address, PATCH it — do not DELETE and re-POST.** A PATCH keeps the row, its
+id and its primary flag in place, so a differing DonorHub value is only queued as an
+`address_conflict` review item (sr-assistant #44 defines how that gets resolved). Deleting
+the primary of a contact with several addresses promotes another of them, and the
+re-POSTed row comes back non-primary unless sent `is_primary: true`, so the mailing export
+and the address sync then use a different row. Deleting a contact's only address leaves it
+with no primary, and the next DonorHub address sync that returns that donor's row creates
+one from DonorHub's (possibly stale) record; a later re-POST then lands as a second,
+non-primary row.
 
 **How to call them from here:** as plain requests, like the rest of this skill (see
 *Writes and the permission check*). The contact wrapper, `/workspace/scripts/donor-update-contact.sh`,

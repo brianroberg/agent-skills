@@ -66,3 +66,69 @@ def test_mailing_list_export_is_human_only():
         "does not say to hand the export to Brian rather than work around the 403"
     )
     assert "human key only" in _section(text, "API Reference"), "the API Reference does not mark the export human-only"
+
+
+# sr-assistant api/sync.py at b9d1f13: trigger_sync and trigger_address_sync are plain `def`
+# routes that run the import inside the request and return its counts -- no background task.
+def test_sync_triggers_are_not_described_as_asynchronous():
+    text = _norm(_text())
+    assert "asynchronously" not in text and "job status" not in text, (
+        "describes the sync trigger as returning a job status for an asynchronous import"
+    )
+    for heading in ("Trigger a Sync", "Pull Addresses from DonorHub"):
+        assert "inside the request" in _norm(_section(_text(), heading)), f"'{heading}' does not say the import runs inside the request"
+
+
+# sr-assistant#46 (live 2026-09-24) added the contact address routes that donor-contact-manage documents;
+# services/donorhub/sync.py sync_addresses creates an address only when the contact has no primary one.
+SUBRESOURCE_HEADING = "Addresses, emails and phones (sub-resource routes)"
+
+
+def test_address_pull_points_at_the_subresource_routes():
+    section = _norm(_section(_text(), "Pull Addresses from DonorHub"))
+    for stale in ("only address-related route", "cannot be created or edited", "cannot be corrected from here"):
+        assert stale not in section, f"still says '{stale}'; sr-assistant#46 added address write routes"
+    assert "donor-contact-manage" in section and SUBRESOURCE_HEADING in section, (
+        "does not point at donor-contact-manage's address routes for corrections"
+    )
+    assert f"### {SUBRESOURCE_HEADING}" in (SKILLS_DIR / "donor-contact-manage" / "SKILL.md").read_text(), (
+        "points at a donor-contact-manage section that does not exist"
+    )
+    assert re.search(r"only \*?creates\*? an address for a contact with no primary address", section), (
+        "does not say the pull creates an address only when the contact has no primary one"
+    )
+
+
+# sr-assistant api/sync.py at b9d1f13: get_pending_items names the only three item types src/ writes.
+PENDING_TYPES = ("error_skipped_donation", "unmatched_donor", "address_conflict")
+
+
+def test_pending_item_types_are_the_ones_the_sync_writes():
+    section = _norm(_section(_text(), "Pending Sync Items"))
+    for kind in PENDING_TYPES:
+        assert f"`{kind}`" in section, f"does not name the {kind} item type"
+    for invented in ("duplicate contacts", "unmatched gifts"):
+        assert invented not in section, f"lists '{invented}', a type the sync never writes"
+
+
+def test_unmatched_donor_is_not_a_missing_contact():
+    """sync_addresses matches a DonorHub row to an ExternalDonor link, not to a contact."""
+    section = _norm(_section(_text(), "Pull Addresses from DonorHub"))
+    assert "no matching contact" not in section, "calls an unmatched donor a missing contact"
+    assert re.search(r"(?i)don't create a contact", section), "does not warn against creating a contact to match it"
+
+
+def test_resolving_a_skipped_donation_is_not_bookkeeping():
+    """resolve_pending_item: resolving an error_skipped_donation releases the donation watermark."""
+    section = _norm(_section(_text(), "Resolve Pending Item"))
+    assert "watermark" in section and "missing gift" in section, (
+        "does not say resolving an error_skipped_donation releases the watermark and can accept a missing gift"
+    )
+
+
+def test_sync_status_fields_are_the_api_fields():
+    section = _norm(_section(_text(), "Check Sync Status"))
+    for field in ("`connected`", "`last_sync`", "`recent_syncs`"):
+        assert field in section, f"does not name the {field} field"
+    assert "watermark" in section, "does not say last_sync is the donation watermark, not the last run time"
+    assert "disconnected" not in section, "describes connected as a three-state value; it is a boolean"
