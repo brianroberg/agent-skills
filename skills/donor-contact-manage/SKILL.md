@@ -246,10 +246,11 @@ groups are joined through link tables.) Before asking, check
 `GET /api/v1/contacts/{id}/summary` — its `giving` block has the lifetime gift count and
 total that the delete would remove.
 
-**A contact with gifts imported by the DonorHub sync cannot be deleted** at `b9d1f13`: the
-request fails with a 500 (a foreign-key error between those gifts and the DonorHub donor
-link) and nothing is deleted. Reproduced against a copy of the server code, not tried on
-the live API. Do not work around it — for example by deleting the gifts or the link
+**A contact with a gift linked to its DonorHub donor record cannot be deleted** at
+`b9d1f13` — and every gift the DonorHub sync imports is linked. The request fails with a
+500 (a foreign-key error between those gifts and the DonorHub donor link) and nothing is
+deleted (sr-assistant#69; reproduced against a copy of the server code, not tried on
+the live API). Do not work around it — for example by deleting the gifts or the link
 first; tell Brian.
 
 ## Group Operations

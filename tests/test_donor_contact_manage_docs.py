@@ -138,13 +138,13 @@ def test_no_blanket_write_block_claim():
 
 
 def test_write_rule_is_stated():
-    text = _text()
-    assert "Send the write when Brian asked for that specific change" in text, "the write rule is missing"
+    section = " ".join(_section(_text(), "Writes and the permission check").split())
+    assert "Send the write when Brian asked for that specific change" in section, "the write rule is missing"
     assert re.search(
-        r"If the permission check refuses a write,\s+do not retry it another way.{0,300}?hand\s+it\s+to\s+Brian",
-        text,
-        re.DOTALL,
-    ), "does not say to hand a refused write to Brian rather than work around it"
+        r"If the permission check refuses a write, do not retry it another way\**\s*\([^)]*\)\. "
+        r"Write out the exact change\W+route, ids and body\W+and hand it to Brian",
+        section,
+    ), "does not say to write out a refused change and hand it to Brian, rather than work around it"
 
 
 # ── 5. Contact delete, group bodies and confidential_notes match sr-assistant b9d1f13 ──
