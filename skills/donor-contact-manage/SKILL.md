@@ -17,7 +17,7 @@ addresses / emails / phones, and manage contact groups.
 ## Vocabulary the API actually accepts
 
 These are the values and keys the API defines (`schemas/contact_subresources.py` at
-brianroberg/sr-assistant#46, head `162e128`; the address keys match the live
+brianroberg/sr-assistant#46, merged as `b9d1f13`; the address keys match the live
 `AddressCreate` schema, which has no street or zip key):
 
 - `address_type` — one of `home`, `business`, `other`, `spouse_business`
@@ -35,8 +35,12 @@ failures are **silent**: its nested lists accept any type string (deliberately l
 by #46; tightening is sr-assistant #19), and its nested schemas do not forbid unknown keys
 (no `additionalProperties: false` in the live `openapi.json`), so the old street / zip keys
 produced a 201 and an address with no street or postal code rather than an error. A row
-stored with an undocumented type will not round-trip through GET-then-PATCH either. Send
-only the listed keys and values on create as well.
+stored with an undocumented type cannot have that type echoed back through PATCH either.
+Send only the listed keys and values on create as well.
+
+A row read back from GET is **not** a valid write body: it also carries `id` and
+`contact_id` (and `address_block` for addresses), which the sub-resource routes reject
+with a 422. Send only the keys you are changing.
 
 ## Contact Operations
 
@@ -95,7 +99,9 @@ Addresses, phones, and emails are optional — a contact can be created with jus
 ### Update a Contact's own fields
 
 `PUT /api/v1/contacts/{id}` is **partial** despite the verb: omitted fields are left alone
-(`exclude_unset` semantics, sr-assistant #19), an explicit JSON `null` clears a field. It
+(`exclude_unset` semantics, sr-assistant #19), an explicit JSON `null` clears a nullable
+field (`file_as: null` instead regenerates the label from the name fields, and `null` on
+a boolean such as `deceased` or `file_as_custom` is a 422). It
 takes the contact's own fields only — `ContactUpdate` has no `addresses`, `phones` or
 `emails` keys, so a nested list in the body does not update those rows. Address, email
 and phone corrections go through the sub-resource routes in the next section.
@@ -111,6 +117,9 @@ It refuses a non-numeric id or a non-object body, backs the record up to
 `local/donor-backups/` first, then prints a field-level diff of what changed. **Read the
 diff, not the status code** — the diff is what proves the write did only what was asked.
 Invoke it as a standalone Bash command (a compound command defeats the allow rule).
+The body is single-quoted, so an apostrophe in a value (O'Brien) would end the quote:
+write it as the JSON escape `\u0027` instead — `'{"last_name": "O\u0027Brien"}'` —
+which keeps the call a single standalone command.
 
 To find the contact ID first:
 ```
@@ -120,18 +129,20 @@ Header: X-API-Key: [from TOOLS.md]
 
 ### Addresses, emails and phones (sub-resource routes)
 
-**Availability: these routes come from brianroberg/sr-assistant#46, which is not yet
-deployed as of 2026-09-09.** Deploys are manual (`fly deploy`), so "merged" and "live" are
-different questions. Check before relying on them:
+**Availability:** these routes come from brianroberg/sr-assistant#46, merged and live since
+2026-09-24 (sr-assistant deploys to Fly on every push to `main`). If one of them
+unexpectedly 404s, check the live spec:
 
 ```bash
-curl -sS --max-time 20 https://donor-management.fly.dev/openapi.json \
-    | jq -r '.paths | keys[] | select(test("/contacts/\\{contact_id\\}/(addresses|emails|phones)"))'
+curl -fsS --max-time 20 https://donor-management.fly.dev/openapi.json \
+    | jq -r '[.paths | keys[] | select(test("/contacts/\\{contact_id\\}/(addresses|emails|phones)"))] | length'
 ```
 
-Empty output means #46 is not deployed: a contact's addresses, emails and phones can then
-only be set at creation and cannot be corrected through the API at all (sr-assistant #21).
-Say so rather than improvising a PUT.
+`6` means the routes are live. `0` means they are gone from the live spec: a contact's
+addresses, emails and phones can then only be set at creation and cannot be corrected
+through the API at all (sr-assistant #21) — say so rather than improvising a PUT. **No
+number at all** (an error on stderr instead) means the check itself failed — report that;
+it says nothing about whether the routes exist.
 
 One set of routes per collection, nested under the contact:
 
@@ -166,11 +177,14 @@ key is a 422 (`extra="forbid"`), so a typo writes nothing.
 - **A collection written through these routes has exactly one primary whenever it has
   rows.** The first row added is primary whatever `is_primary` it was sent with. Deleting
   the primary, or PATCHing it to `is_primary: false`, promotes the successor: the oldest
-  row flagged usable (`is_deliverable` for addresses, `is_valid` for emails/phones), and a
-  flagged row only when nothing else exists. A collection that already had rows but no
-  primary (importer output) is repaired by the first write through these routes.
-- **409** on PATCHing the *only* row to `is_primary: false` — "cannot demote the only
-  address; add another or delete this one". Add a row or delete instead.
+  row flagged usable (`is_deliverable: true` for addresses, `is_valid: true` for
+  emails/phones); a row flagged unusable is promoted only when no usable row remains. A
+  collection that already had rows but no primary (importer output) is repaired by the
+  first write through these routes.
+- **409** on PATCHing the *only* row to `is_primary: false`, whether or not it is currently
+  primary — "cannot store is_primary:false on the only address: the only row of a
+  collection is its primary; omit the key, send true, add another row, or delete this
+  one". Omit `is_primary`, add a row, or delete instead.
 - **409** on a write that loses a race against a concurrent promotion — re-read the
   collection and retry.
 - **404** for a row reached through the wrong contact's URL; #46's tests pin that a PATCH
@@ -179,10 +193,13 @@ key is a 422 (`extra="forbid"`), so a typo writes nothing.
 - The contact row itself (`file_as`, names, `updated_at`) is untouched by a sub-resource
   write.
 
-**To correct an address, PATCH it — do not DELETE and re-POST.** Deleting a contact's only
-address then running the DonorHub address sync recreates one from DonorHub's record; a
-PATCHed address is kept and a differing DonorHub value is queued as an `address_conflict`
-review item instead (sr-assistant #44 defines how that gets resolved).
+**To correct an address, PATCH it — do not DELETE and re-POST.** The DonorHub address sync
+compares its record with the contact's primary address and, when the contact has no
+primary address, creates one from DonorHub's (possibly stale) record. A PATCH keeps the row
+and its id in place, so a differing DonorHub value is only queued as an `address_conflict`
+review item (sr-assistant #44 defines how that gets resolved). A DELETE opens a window —
+permanent if the re-POST never happens — in which a sync run recreates the address from
+DonorHub.
 
 **How to call them from here:**
 
@@ -279,7 +296,7 @@ Body: {
 - `PUT /api/v1/contacts/{id}` updates the contact's own fields only and leaves omitted
   fields alone; it does not touch addresses, phones or emails (`ContactUpdate` has no such
   keys; #46's `test_update_contact_cannot_touch_nested_rows` pins it). Those are corrected one row
-  at a time through the sub-resource routes above (once sr-assistant#46 is deployed).
+  at a time through the sub-resource routes above (sr-assistant#46).
 - Always diff a donor write; never trust the response status. The contact wrapper prints
   the diff for you.
 - The `file_as` field controls sort order. Convention: "LastName, FirstName" for individuals, org name for organizations.

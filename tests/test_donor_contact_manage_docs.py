@@ -1,6 +1,6 @@
 """Doc-parity tests for ``skills/donor-contact-manage/SKILL.md``.
 
-Pins the skill to the contract of brianroberg/sr-assistant#46 (head ``162e128``,
+Pins the skill to the contract of brianroberg/sr-assistant#46 (merged as ``b9d1f13``,
 contact address/email/phone sub-resources) and to facts already true of the
 deployed donor API: the address keys are ``street_address`` / ``postal_code``
 (the live ``AddressCreate`` schema has no ``street`` / ``zip`` key, and does not
@@ -16,7 +16,7 @@ from tests.conftest import SKILLS_DIR
 
 SKILL = SKILLS_DIR / "donor-contact-manage" / "SKILL.md"
 
-# From src/donor_management/schemas/contact_subresources.py at sr-assistant 162e128.
+# From src/donor_management/schemas/contact_subresources.py at sr-assistant b9d1f13.
 ADDRESS_TYPES = {"home", "business", "other", "spouse_business"}
 PHONE_TYPES = {"home", "mobile", "business", "spouse_mobile"}
 EMAIL_TYPES = {"personal", "business", "spouse"}
@@ -53,7 +53,9 @@ def test_email_type_vocabulary():
 def test_no_undefined_type_value_is_offered():
     text = _text()
     assert not re.search(r"`work`", text), "documents a `work` type; the API defines none"
-    assert not re.search(r'"(address|phone|email)_type":\s*"(work)"', text)
+    vocab = {"address": ADDRESS_TYPES, "phone": PHONE_TYPES, "email": EMAIL_TYPES}
+    for kind, value in re.findall(r'"(address|phone|email)_type":\s*"([^"]*)"', text):
+        assert value in vocab[kind], f'an example uses "{kind}_type": "{value}", outside the API\'s list'
 
 
 # ── 2. Address keys are the API's keys ──
@@ -95,7 +97,7 @@ def test_primary_rule_and_both_409s_are_stated():
 def test_deploy_dependency_is_stated():
     text = _text()
     assert "sr-assistant#46" in text or "sr-assistant PR #46" in text, "does not name the PR the routes come from"
-    assert re.search(r"openapi\.json", text), "gives the reader no way to check whether the routes are deployed"
+    assert re.search(r"openapi\.json", text), "gives the reader no way to confirm the routes against the live spec"
 
 
 # ── 4. Contact PUT is partial and carries no nested arrays; sub-resource writes have no wrapper yet ──
@@ -110,14 +112,19 @@ def test_put_is_not_described_as_full_replacement():
 def test_no_raw_curl_for_subresource_writes():
     """Raw curl writes to this API are classifier-blocked; the skill must not instruct one.
 
-    The curl assertion is green from the start (the current skill uses no curl) -- a
-    pin, not a red/green step; the wrapper/allow-rule assertion is the red half.
+    The curl check matches -X / --request in either order relative to the URL, any
+    contact id (placeholder or literal), and backslash-continued commands. The second
+    assertion pins the sub-resource statement itself -- the PUT section's own
+    "wrapper ... allow rule" wording must not be able to satisfy it.
     """
-    text = _text()
+    text = _text().replace("\\\n", " ")
     raw_write = re.compile(
-        r"curl[^\n]*-X\s+(POST|PATCH|DELETE)[^\n]*/contacts/\{contact_id\}/(addresses|emails|phones)"
+        r"^(?=[^\n]*\bcurl\b)"
+        r"(?=[^\n]*(?:-X\s*|--request[\s=]+)(?:POST|PATCH|DELETE)\b)"
+        r"(?=[^\n]*/contacts/[^/\s]+/(?:addresses|emails|phones)\b)",
+        re.MULTILINE,
     )
-    assert not raw_write.search(text)
-    assert re.search(r"wrapper", text) and re.search(r"allow rule", text), (
+    assert not raw_write.search(text), "instructs a raw curl write to a contact sub-resource route"
+    assert re.search(r"Sub-resource writes need\s+new wrapper scripts?\s+plus\s+allow rules", text), (
         "does not say that sub-resource writes need a wrapper script and an allow rule that do not exist yet"
     )

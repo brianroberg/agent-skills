@@ -12,8 +12,7 @@ DONOR_ENDPOINTS = {
     "POST /api/v1/contacts": {"description": "Create contact", "domain": "donor"},
     "PUT /api/v1/contacts/{id}": {"description": "Update contact", "domain": "donor"},
     "DELETE /api/v1/contacts/{id}": {"description": "Delete contact", "domain": "donor"},
-    # Contact sub-resources — brianroberg/sr-assistant#46 (head 162e128). Registered ahead of
-    # deployment; test_donor_spec_in_sync (network) stays red until that PR is deployed.
+    # Contact sub-resources — brianroberg/sr-assistant#46 (merged as b9d1f13, live 2026-09-24).
     "GET /api/v1/contacts/{contact_id}/addresses": {"description": "List a contact's addresses", "domain": "donor"},
     "POST /api/v1/contacts/{contact_id}/addresses": {"description": "Add an address (201)", "domain": "donor"},
     "PATCH /api/v1/contacts/{contact_id}/addresses/{address_id}": {"description": "Partially update an address", "domain": "donor"},
