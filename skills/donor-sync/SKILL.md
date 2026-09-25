@@ -15,6 +15,16 @@ Trigger and monitor DonorHub sync operations, manage pledges, and export mailing
 
 **Export:** "export mailing list," "newsletter recipients."
 
+## Writes and the permission check
+
+**Send the write when Brian asked for that specific change.** The writes in this skill are
+triggering a sync or an address pull, resolving a pending item, and creating, updating,
+deactivating or deleting a pledge.
+
+**If the permission check refuses a write, do not retry it another way** (another tool, a
+script, a reworded command). Write out the exact request — route, ids and body — and hand
+it to Brian.
+
 ## DonorHub Sync
 
 The donor management system syncs gifts and contact data from DonorHub (an external donation processing platform). Sync can be triggered manually and produces a log of what was imported.
@@ -27,6 +37,11 @@ Header: X-API-Key: [from TOOLS.md]
 ```
 
 Runs the donation import from DonorHub. Returns immediately with a job status — the actual import runs asynchronously.
+
+On 2026-09-22 this call was refused by the assistant's own permission rules, not by the API
+(sr-assistant#67, which does not say how it was requested). If it is refused, follow
+*Writes and the permission check*: ask Brian to run the sync himself — the web sync page
+has a **Sync Now** button.
 
 ### Pull Addresses from DonorHub
 
@@ -160,6 +175,10 @@ Header: X-API-Key: [from TOOLS.md]
 
 Streams a CSV of newsletter recipients with mailing addresses. Useful for generating physical mailing labels.
 
+**Human keys only.** It returns 403 `Human access required` to the agent key (sr-assistant
+`api/export.py` uses `require_human_read`; sr-assistant#51 records the 403 against the
+assistant's key). Do not retry it another way; ask Brian to run the export.
+
 ## API Reference
 
 Endpoint and credentials in `/workspace/TOOLS.md`.
@@ -188,5 +207,5 @@ POST   /api/v1/pledges/{id}/deactivate — mark pledge inactive
 
 **Export:**
 ```
-POST /api/v1/export/mailing-list       — export newsletter mailing list CSV
+POST /api/v1/export/mailing-list       — export newsletter mailing list CSV (human key only)
 ```
