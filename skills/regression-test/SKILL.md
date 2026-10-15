@@ -54,6 +54,11 @@ next piece of work there**, not an afterthought.
 uv run pytest -m functional --require-browser -q      # needs Chromium: uv run playwright install --with-deps chromium
 ```
 
+The marker is `functional` by default; a project that already uses that name for something
+else sets `regression_kit_marker` in its pytest ini options and runs with that name instead
+(training-reports uses `browser`, because `functional` is its Node+jsdom marker). Check the
+project's README_TESTING or pyproject before assuming.
+
 On a machine without Chromium (this agent container has none), the same command errors at
 setup by design. Say so, and run it where a browser exists: Brian's Mac, or CI once the
 project's workflow carries `docs/ci/functional-tests.yml` from the kit (Brian copies workflow
