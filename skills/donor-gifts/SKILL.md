@@ -225,8 +225,11 @@ Header: X-API-Key: [from TOOLS.md]
 ```
 
 Deletes the campaign row itself (204). While a gift split, pledge, history entry or task
-still references it the API refuses with 409 and names the tables that still point at it;
-the attributions are not nulled. Pledges, history entries and tasks can be moved off it
+still references it the API refuses with 409; its `detail` names each kind of referrer in
+prose (history entries, pledges, tasks, gift splits) with what can be done about it, and
+the attributions are not nulled. A second 409, "still referenced by rows written after the
+reference check", means a reference landed mid-delete: retry once those rows are
+reassigned. Pledges, history entries and tasks can be moved off it
 with their own PUT (`campaign_id`); a gift split cannot be re-pointed through the API (the
 409 says so), so a gift under the campaign stays there short of deleting and re-creating
 the gift, which *Deleting Gifts* rules out for a synced one. To retire an appeal that has
