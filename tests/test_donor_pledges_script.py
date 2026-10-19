@@ -172,3 +172,150 @@ def test_script_never_prints_the_key():
     # the key VALUE must never reach stdout/stderr: no print or f-string carrying the variable
     assert not re.search(r"print\([^)]*\bapi_key\b", src)
     assert not re.search(r"\{api_key\}", src)
+
+
+# ── review round 1 (2026-10-19): behaviour pinned by the fixes ──
+
+import datetime as dt  # noqa: E402
+
+TODAY = dt.date(2026, 10, 19)
+
+
+def test_future_end_date_is_a_running_fixed_term_pledge_not_an_ended_one(mod):
+    # r1 finding 2: a pledge with end_date ahead of today still shows its live status
+    p = dict(PLEDGE, end_date="2027-06-30", status=dict(PLEDGE["status"], state="behind", good_until=None, behind_periods=2))
+    out = mod.format_report(CONTACTS[1], [p], FREQS, today=TODAY)
+    assert "ended" not in out
+    assert "behind" in out and "through 2027-06-30" in out
+
+
+def test_past_end_date_or_inactive_is_ended(mod):
+    past = dict(PLEDGE, end_date="2026-01-31")
+    inactive = dict(PLEDGE, id=502, end_date=None, is_active=False)
+    out = mod.format_report(CONTACTS[1], [past, inactive], FREQS, today=TODAY)
+    assert "ended 2026-01-31" in out and "ended (date not recorded)" in out
+
+
+def test_report_flags_a_deceased_contact(mod):
+    out = mod.format_report(dict(CONTACTS[1], deceased=True), [PLEDGE], FREQS, today=TODAY)
+    assert out.splitlines()[0].endswith("— 1 pledge") and "(deceased)" in out.splitlines()[0]
+
+
+def test_describe_contacts_says_when_the_list_may_be_cut_off(mod):
+    # r1 finding 5: the search is capped; say so instead of presenting the list as complete
+    out = mod.describe_contacts(CONTACTS, limit=2)
+    assert "first 2" in out
+    assert "first" not in mod.describe_contacts(CONTACTS, limit=100)
+
+
+def test_frequency_table_is_only_fetched_for_an_unknown_id(mod):
+    # r1 finding 8: no third request when every frequency_id is in the built-in table
+    assert mod.needs_frequency_fetch([PLEDGE]) is False
+    assert mod.needs_frequency_fetch([dict(PLEDGE, frequency_id=42)]) is True
+    assert mod.needs_frequency_fetch([]) is False
+
+
+def test_notes_branch_is_gone_list_rows_carry_no_notes(mod):
+    # r1 finding 10
+    out = mod.format_report(CONTACTS[1], [dict(PLEDGE, notes="Increased from $200")], FREQS, today=TODAY)
+    assert "notes:" not in out
+
+
+# ── main(): the exit-code contract the SKILL.md documents ──
+
+
+def _run(mod, monkeypatch, argv, responses, capsys):
+    """Drive main() with a fake fetch_json: responses maps a path prefix to a payload or an ApiError."""
+    calls = []
+
+    def fake(path, params, api_key):
+        calls.append((path, params))
+        for prefix, payload in responses.items():
+            if path.startswith(prefix):
+                if isinstance(payload, Exception):
+                    raise payload
+                return payload
+        raise AssertionError(f"unexpected GET {path}")
+
+    monkeypatch.setattr(mod, "fetch_json", fake)
+    monkeypatch.setenv("DONOR_API_KEY", "k")
+    code = mod.main(argv)
+    out = capsys.readouterr()
+    return code, out.out, out.err, calls
+
+
+def test_main_prints_the_report_with_two_requests_when_ids_are_known(mod, monkeypatch, capsys):
+    code, out, err, calls = _run(mod, monkeypatch, ["Pat Example"],
+                                 {"/api/v1/contacts": [CONTACTS[1]], "/api/v1/pledges": [PLEDGE]}, capsys)
+    assert code == 0 and "1 pledge" in out
+    assert [c[0] for c in calls] == ["/api/v1/contacts", "/api/v1/pledges"]
+
+
+def test_main_contact_id_not_found_is_exit_2_not_an_outage(mod, monkeypatch, capsys):
+    # r1 finding 7
+    code, out, err, calls = _run(mod, monkeypatch, ["--contact-id", "900001"],
+                                 {"/api/v1/contacts/900001": mod.ApiError("HTTP 404 on GET /api/v1/contacts/900001", status=404)}, capsys)
+    assert code == 2 and "no contact 900001" in out
+
+
+def test_main_api_failure_is_exit_3(mod, monkeypatch, capsys):
+    code, out, err, calls = _run(mod, monkeypatch, ["Pat Example"],
+                                 {"/api/v1/contacts": mod.ApiError("GET /api/v1/contacts failed: timed out")}, capsys)
+    assert code == 3 and "donor API" in err
+
+
+def test_main_ambiguous_name_lists_candidates_and_exits_2(mod, monkeypatch, capsys):
+    code, out, err, calls = _run(mod, monkeypatch, ["Example"], {"/api/v1/contacts": CONTACTS}, capsys)
+    assert code == 2 and "1001" in out and "1002" in out
+
+
+def test_main_without_a_key_is_exit_2(mod, monkeypatch, capsys):
+    monkeypatch.delenv("DONOR_API_KEY", raising=False)
+    assert mod.main(["Pat Example"]) == 2
+
+
+# ── security review (2026-10-19): the key must not follow a redirect or travel over http ──
+
+
+def test_redirects_are_refused(mod):
+    import urllib.request
+    h = mod._NoRedirect()
+    with pytest.raises(mod.ApiError):
+        h.redirect_request(urllib.request.Request("https://a.example/x"), None, 302, "Found", {}, "https://b.example/y")
+
+
+def test_non_https_base_url_is_refused_before_any_request(mod, monkeypatch, capsys):
+    monkeypatch.setenv("DONOR_API_KEY", "k")
+    monkeypatch.setattr(mod, "BASE_URL", "http://donor-management.fly.dev")
+    monkeypatch.setattr(mod, "fetch_json", lambda *a: (_ for _ in ()).throw(AssertionError("must not be called")))
+    assert mod.main(["Pat Example"]) == 2
+    assert "https" in capsys.readouterr().err
+
+
+def test_skill_example_contact_id_is_outside_the_production_range():
+    sec = _section(SKILL.read_text(), "Pledges")
+    ids = [int(x) for x in re.findall(r"--contact-id (\d+)", sec)]
+    assert ids and all(i >= 900000 for i in ids), "example ids must not be real contact ids"
+
+
+def test_skill_command_lines_use_the_deployed_absolute_path():
+    # r1 finding 1: the agent copies the line verbatim and runs it from /workspace
+    sec = _section(SKILL.read_text(), "Pledges")
+    cmds = re.findall(r"^python3 (\S+pledges\.py)", sec, re.MULTILINE)
+    assert cmds and all(c.startswith("/home/claude/.claude/skills/agent-skills/") for c in cmds), cmds
+
+
+def test_skill_points_awaiting_first_gift_explanation_at_tools_md_not_donor_sync():
+    # r1 finding 3: donor-sync has no such explanation
+    sec = _section(SKILL.read_text(), "Pledges")
+    assert "TOOLS.md" in sec
+    sync = (SKILLS_DIR / "donor-sync" / "SKILL.md").read_text()
+    assert "awaiting" in sync or "donor-sync` for why" not in sec
+
+
+def test_donor_sync_pledge_reads_agree_with_donor_gifts():
+    # r1 finding 4: same endpoint, same documented default and frequency count
+    sync = (SKILLS_DIR / "donor-sync" / "SKILL.md").read_text()
+    assert "active_only=false" in sync
+    assert "Add `?active_only=true` to show only active pledges" not in sync
+    assert "monthly, quarterly, semi-annual, annual." not in sync
