@@ -277,6 +277,27 @@ def test_main_ambiguous_name_lists_candidates_and_exits_2(mod, monkeypatch, caps
     assert code == 2 and "1001" in out and "1002" in out
 
 
+def test_main_rejected_key_is_exit_2_with_a_replace_hint(mod, monkeypatch, capsys):
+    # r2-4
+    code, _out, err, _calls = _run(mod, monkeypatch, ["--contact-id", "900001"],
+                                   {"/api/v1/contacts/900001": mod.ApiError("HTTP 401 on GET /api/v1/contacts/900001", status=401)}, capsys)
+    assert code == 2 and "DONOR_API_KEY was rejected" in err
+
+
+def test_fetch_json_turns_a_cut_connection_into_an_api_error(mod, monkeypatch):
+    # r2-3: IncompleteRead / RemoteDisconnected are not URLError subclasses
+    import http.client
+
+    class Boom:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): raise http.client.IncompleteRead(b"")
+        def __exit__(self, *a): return False
+
+    monkeypatch.setattr(mod._OPENER, "open", lambda *a, **k: Boom())
+    with pytest.raises(mod.ApiError):
+        mod.fetch_json("/api/v1/pledges", None, "k")
+
+
 def test_main_without_a_key_is_exit_2(mod, monkeypatch, capsys):
     monkeypatch.delenv("DONOR_API_KEY", raising=False)
     assert mod.main(["Pat Example"]) == 2

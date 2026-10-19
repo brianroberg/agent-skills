@@ -10,14 +10,16 @@ pledges (active and ended); a third, the frequency table, only when a row's freq
 is not in the built-in table. The key comes from DONOR_API_KEY, goes only to an https
 DONOR_API_URL, is not forwarded on a redirect (refused), and is never printed.
 
-Exit codes: 0 printed · 2 bad input, no key, non-https URL, no match, an unknown
---contact-id, or several matches (the list is printed so the caller can pass
---contact-id) · 3 the API could not be reached or answered with an error.
+Exit codes: 0 printed · 2 a caller-side problem: bad input, no key or a rejected key
+(401/403), non-https URL, no match, an unknown --contact-id, or several matches (the
+list is printed so the caller can pass --contact-id) · 3 the API could not be reached,
+cut the connection, or answered with another error.
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
+import http.client
 import json
 import os
 import sys
@@ -206,8 +208,9 @@ def fetch_json(path: str, params: dict | None, api_key: str):
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as ex:
         raise ApiError(f"HTTP {ex.code} on GET {path}", status=ex.code) from ex
-    except (urllib.error.URLError, TimeoutError, ValueError) as ex:
-        raise ApiError(f"GET {path} failed: {ex}") from ex
+    except (OSError, http.client.HTTPException, ValueError) as ex:
+        # URLError, timeouts, a connection reset or an incomplete body all land here
+        raise ApiError(f"GET {path} failed: {type(ex).__name__}: {ex}") from ex
 
 
 def main(argv=None) -> int:
@@ -250,6 +253,9 @@ def main(argv=None) -> int:
             except ApiError:
                 pass  # an unknown id then prints as 'frequency N'
     except ApiError as ex:
+        if ex.status in (401, 403):
+            print(f"DONOR_API_KEY was rejected (HTTP {ex.status}); replace the key", file=sys.stderr)
+            return 2
         print(f"donor API: {ex}", file=sys.stderr)
         return 3
 
