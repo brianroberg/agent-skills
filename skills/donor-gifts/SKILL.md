@@ -258,6 +258,9 @@ Body: {
 - `amount` (required) — gift amount as a decimal
 - `memo` — description/purpose of the gift
 - `payment_method` — how the gift was made (check, cash, stock, wire, etc.)
+- `splits` — optional list of `{campaign_id, promise_id, amount}` allocations (see
+  *Campaigns*); split amounts may sum to less than `amount` but not more (422), and a
+  `campaign_id` or `promise_id` that does not exist is a 400
 
 **Important:** Do NOT set `external_gift_code` for manual gifts — leave it null. This field is used by the DonorHub sync to track imported gifts. Setting it on a manual gift could cause sync conflicts.
 
