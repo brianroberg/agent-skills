@@ -139,10 +139,12 @@ The list comes newest first; `is_active` is optional, and `skip`/`limit` page it
 summary's amounts are strings, as pledge amounts are.
 
 The summary is computed server-side, like the contact summary above. It returns
-`campaign_id`, `as_of` and three objects:
+`campaign_id`, `as_of` (the server's date when it answered; the summary takes no date
+parameter, so a figure as of a past date is not available from it) and three objects:
 - `asks` — history entries carrying the campaign: `total`, `challenge`, `non_challenge`,
-  `by_result` (one row per `history_result_id`, null last), `distinct_contacts_asked` (people
-  on `is_challenge` entries, each once) and `distinct_contacts_all`.
+  `by_result` (rows of `{history_result_id, count}`, the null result last),
+  `distinct_contacts_asked` (people on `is_challenge` entries, each once) and
+  `distinct_contacts_all`.
 - `commitments` — pledges carrying it: `count`, `active_count`, `monthly_equivalent`,
   `active_monthly_equivalent` (amount ÷ frequency months, summed; the active pair counts
   pledges still in force on `as_of`).
