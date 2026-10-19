@@ -207,9 +207,9 @@ Body: {
 ```
 
 `name` is required (1–100 characters); `description`, `begin_date`, `end_date` and `goal`
-are optional and `is_active` defaults to true. `goal`, when sent, is a positive amount with
-at most two decimal places (`0` and `25000.005` are each a 422); to remove a goal on PUT
-send `null`, not `0`. Returns 201 with the full campaign. Both writes run the begin/end
+are optional and `is_active` defaults to true. `goal`, when sent, is a positive amount (`0` is
+a 422), checked to two decimal places when sent as a string; to remove a goal on PUT send
+`null`, not `0`. Returns 201 with the full campaign. Both writes run the begin/end
 ordering check and answer 422 when it fails.
 
 ```
