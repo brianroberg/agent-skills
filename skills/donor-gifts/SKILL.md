@@ -155,7 +155,11 @@ Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 50
 re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
 
 Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
-real campaign; the history and task reads themselves are in `donor-log` and `donor-tasks`):
+real campaign). The history and task reads and the pledge writes are documented in
+`donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is this
+section's. `campaign_id` is also an optional key on the POST and PUT bodies for pledges,
+history entries and tasks, so an ask, commitment or task logged under an appeal sets it
+there:
 
 ```
 GET /api/v1/gifts?campaign_id=900010
