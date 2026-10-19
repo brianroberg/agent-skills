@@ -6,13 +6,15 @@ API returned on 2026-10-19 (``GET /api/v1/contacts?search=`` is a bare list;
 ``{id, name, months}``). No network. The doc tests read the SKILL.md only.
 """
 
+import datetime as dt
 import importlib.util
 import re
 import sys
 
 import pytest
 
-from tests.conftest import SKILLS_DIR, section as _section
+from tests.conftest import SKILLS_DIR
+from tests.conftest import section as _section
 
 SCRIPT = SKILLS_DIR / "donor-gifts" / "scripts" / "pledges.py"
 SKILL = SKILLS_DIR / "donor-gifts" / "SKILL.md"
@@ -169,8 +171,6 @@ def test_script_never_prints_the_key():
 
 # ── review round 1 (2026-10-19): behaviour pinned by the fixes ──
 
-import datetime as dt  # noqa: E402
-
 TODAY = dt.date(2026, 10, 19)
 
 
@@ -238,27 +238,27 @@ def _run(mod, monkeypatch, argv, responses, capsys):
 
 
 def test_main_prints_the_report_with_two_requests_when_ids_are_known(mod, monkeypatch, capsys):
-    code, out, err, calls = _run(mod, monkeypatch, ["Pat Example"],
-                                 {"/api/v1/contacts": [CONTACTS[1]], "/api/v1/pledges": [PLEDGE]}, capsys)
+    code, out, _err, calls = _run(mod, monkeypatch, ["Pat Example"],
+                                  {"/api/v1/contacts": [CONTACTS[1]], "/api/v1/pledges": [PLEDGE]}, capsys)
     assert code == 0 and "1 pledge" in out
     assert [c[0] for c in calls] == ["/api/v1/contacts", "/api/v1/pledges"]
 
 
 def test_main_contact_id_not_found_is_exit_2_not_an_outage(mod, monkeypatch, capsys):
     # r1 finding 7
-    code, out, err, calls = _run(mod, monkeypatch, ["--contact-id", "900001"],
+    code, out, _err, _calls = _run(mod, monkeypatch, ["--contact-id", "900001"],
                                  {"/api/v1/contacts/900001": mod.ApiError("HTTP 404 on GET /api/v1/contacts/900001", status=404)}, capsys)
     assert code == 2 and "no contact 900001" in out
 
 
 def test_main_api_failure_is_exit_3(mod, monkeypatch, capsys):
-    code, out, err, calls = _run(mod, monkeypatch, ["Pat Example"],
-                                 {"/api/v1/contacts": mod.ApiError("GET /api/v1/contacts failed: timed out")}, capsys)
+    code, _out, err, _calls = _run(mod, monkeypatch, ["Pat Example"],
+                                   {"/api/v1/contacts": mod.ApiError("GET /api/v1/contacts failed: timed out")}, capsys)
     assert code == 3 and "donor API" in err
 
 
 def test_main_ambiguous_name_lists_candidates_and_exits_2(mod, monkeypatch, capsys):
-    code, out, err, calls = _run(mod, monkeypatch, ["Example"], {"/api/v1/contacts": CONTACTS}, capsys)
+    code, out, _err, _calls = _run(mod, monkeypatch, ["Example"], {"/api/v1/contacts": CONTACTS}, capsys)
     assert code == 2 and "1001" in out and "1002" in out
 
 
