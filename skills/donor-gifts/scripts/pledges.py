@@ -5,13 +5,14 @@
     python3 skills/donor-gifts/scripts/pledges.py --contact-id 1001
     python3 skills/donor-gifts/scripts/pledges.py "Example"         # several matches: lists them, exit 2
 
-Read-only. Three requests at most, one at a time: the contact search (skipped with
---contact-id), the contact's pledges (active and ended), and the live frequency table.
-The key comes from DONOR_API_KEY and is never printed.
+Read-only. Two requests, one at a time: the contact search or read, then the contact's
+pledges (active and ended); a third, the frequency table, only when a row's frequency_id
+is not in the built-in table. The key comes from DONOR_API_KEY, goes only to an https
+DONOR_API_URL, is not forwarded on a redirect (refused), and is never printed.
 
-Exit codes: 0 printed · 2 bad input, no key, no match or several matches (the list is
-printed so the caller can pass --contact-id) · 3 the API could not be reached or
-answered with an error.
+Exit codes: 0 printed · 2 bad input, no key, non-https URL, no match, an unknown
+--contact-id, or several matches (the list is printed so the caller can pass
+--contact-id) · 3 the API could not be reached or answered with an error.
 """
 from __future__ import annotations
 
@@ -157,7 +158,24 @@ def format_report(contact: dict, pledges: list, freqs: list | None, today: dt.da
 # ---------------------------------------------------------------- I/O
 
 class ApiError(Exception):
-    pass
+    def __init__(self, msg: str, status: int | None = None):
+        super().__init__(msg)
+        self.status = status
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """urllib would copy the X-API-Key header onto a redirect to any host; refuse instead."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ApiError(f"redirect refused (HTTP {code})", status=code)
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect())
+
+
+def needs_frequency_fetch(pledges: list) -> bool:
+    """Only read the live frequency table when a row's id is not in the built-in one."""
+    return any(p.get("frequency_id") not in FREQUENCIES for p in pledges)
 
 
 def fetch_json(path: str, params: dict | None, api_key: str):
@@ -166,10 +184,10 @@ def fetch_json(path: str, params: dict | None, api_key: str):
         url += "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"X-API-Key": api_key, "Accept": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        with _OPENER.open(req, timeout=TIMEOUT) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as ex:
-        raise ApiError(f"HTTP {ex.code} on GET {path}") from ex
+        raise ApiError(f"HTTP {ex.code} on GET {path}", status=ex.code) from ex
     except (urllib.error.URLError, TimeoutError, ValueError) as ex:
         raise ApiError(f"GET {path} failed: {ex}") from ex
 
@@ -187,10 +205,19 @@ def main(argv=None) -> int:
     if not api_key:
         print("DONOR_API_KEY is not set", file=sys.stderr)
         return 2
+    if not BASE_URL.startswith("https://"):
+        print(f"DONOR_API_URL must be https (got {BASE_URL.split(':', 1)[0]}): the key would travel in clear", file=sys.stderr)
+        return 2
 
     try:
         if args.contact_id is not None:
-            contact = fetch_json(f"/api/v1/contacts/{args.contact_id}", None, api_key)
+            try:
+                contact = fetch_json(f"/api/v1/contacts/{args.contact_id}", None, api_key)
+            except ApiError as ex:
+                if ex.status == 404:
+                    print(f"no contact {args.contact_id}")
+                    return 2
+                raise
         else:
             found = rows(fetch_json("/api/v1/contacts", {"search": args.name, "limit": SEARCH_LIMIT}, api_key))
             contact = pick_contact(found, args.name)
@@ -198,10 +225,12 @@ def main(argv=None) -> int:
                 print(describe_contacts(found))
                 return 2
         pledges = rows(fetch_json("/api/v1/pledges", {"contact_id": contact["id"], "active_only": "false"}, api_key))
-        try:
-            freqs = rows(fetch_json("/api/v1/pledges/frequencies", None, api_key))
-        except ApiError:
-            freqs = None  # the built-in table covers the known ids
+        freqs = None  # the built-in table covers the known ids
+        if needs_frequency_fetch(pledges):
+            try:
+                freqs = rows(fetch_json("/api/v1/pledges/frequencies", None, api_key))
+            except ApiError:
+                pass  # an unknown id then prints as 'frequency N'
     except ApiError as ex:
         print(f"donor API: {ex}", file=sys.stderr)
         return 3
