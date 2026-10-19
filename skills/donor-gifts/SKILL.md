@@ -120,9 +120,9 @@ Pledge writes (create, raise, end) are in `donor-sync`.
 A campaign is TntConnect's appeal idea: a label that gifts (through their splits), pledges,
 history entries and tasks can carry, so one appeal's asks, commitments and giving can be
 read together. The routes are live (brianroberg/sr-assistant#42, merged 2026-09-17), but
-**as of 2026-10-19 no campaigns exist in production**: `GET /api/v1/campaigns` returns `[]`
-and each `campaign_id` the other endpoints return is null. Treat this section as what the
-API offers; a listing today prints nothing, and that is not an error.
+**as of 2026-10-19 no campaigns exist in production** (`GET /api/v1/campaigns` returned `[]`
+that day). That is a snapshot, not a rule: call the list rather than assume, and treat an
+empty result as expected rather than an error until Brian has created one.
 
 Reads:
 
@@ -297,7 +297,7 @@ GET /api/v1/gifts/{id}              — gift detail (with splits)
 GET /api/v1/contacts/{id}/summary   — computed giving stats
 GET /api/v1/pledges                 — list pledges (?contact_id=N&active_only=false)
 GET /api/v1/pledges/frequencies     — frequency ids → names (table above)
-GET /api/v1/campaigns               — list campaigns (?is_active=true|false; none exist yet)
+GET /api/v1/campaigns               — list campaigns (?is_active=true|false; none as of 2026-10-19)
 GET /api/v1/campaigns/{id}          — campaign detail
 GET /api/v1/campaigns/{id}/summary  — asks, commitments and gifts attributed to a campaign
 ```
