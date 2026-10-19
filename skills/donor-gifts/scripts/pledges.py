@@ -47,15 +47,19 @@ FREQUENCIES = {
 
 # ---------------------------------------------------------------- pure
 
+class ApiError(Exception):
+    def __init__(self, msg: str, status: int | None = None):
+        super().__init__(msg)
+        self.status = status
+
+
+
 def rows(payload) -> list:
-    """The list inside a response: a bare list, or {items|contacts|pledges|results: [...]}."""
+    """The three endpoints the script reads answer with a bare list (live openapi.json,
+    2026-10-19). Anything else is a changed response shape and must not read as 'no rows'."""
     if isinstance(payload, list):
         return payload
-    if isinstance(payload, dict):
-        for key in ("items", "contacts", "pledges", "results"):
-            if isinstance(payload.get(key), list):
-                return payload[key]
-    return []
+    raise ApiError(f"unexpected response shape: {type(payload).__name__}")
 
 
 def _label(c: dict) -> str:
@@ -183,12 +187,6 @@ def format_report(contact: dict, pledges: list, freqs: list | None, today: dt.da
 
 
 # ---------------------------------------------------------------- I/O
-
-class ApiError(Exception):
-    def __init__(self, msg: str, status: int | None = None):
-        super().__init__(msg)
-        self.status = status
-
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """urllib would copy the X-API-Key header onto a redirect to any host; refuse instead."""

@@ -56,11 +56,12 @@ PLEDGE = {
 # ── response shapes ──
 
 
-def test_rows_accepts_a_bare_list_and_a_wrapped_list(mod):
+def test_rows_takes_a_bare_list_and_refuses_any_other_shape(mod):
+    # r2-9: a wrapped or changed response must fail loudly, not read as 'no rows'
     assert mod.rows([{"id": 1}]) == [{"id": 1}]
-    assert mod.rows({"items": [{"id": 2}]}) == [{"id": 2}]
-    assert mod.rows({"contacts": [{"id": 3}]}) == [{"id": 3}]
-    assert mod.rows({"total": 0}) == []
+    assert mod.rows([]) == []
+    with pytest.raises(mod.ApiError):
+        mod.rows({"items": [{"id": 2}]})
 
 
 # ── picking the contact ──
