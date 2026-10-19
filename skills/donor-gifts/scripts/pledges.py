@@ -65,16 +65,30 @@ def _norm(s: str | None) -> str:
     return " ".join((s or "").lower().replace(",", " ").split())
 
 
+def search_term(query: str) -> str:
+    """What to send as `search`: the API matches ONE substring across first, last, org and
+    file_as, so "Pat Example" matches nothing; the last word (the surname) does."""
+    words = _norm(query).split()
+    return words[-1] if words else ""
+
+
+def _words(c: dict) -> set[str]:
+    out = set()
+    for k in ("first_name", "last_name", "spouse_first_name", "org_name", "file_as"):
+        out |= set(_norm(c.get(k)).split())
+    return out
+
+
 def pick_contact(contacts: list, query: str) -> dict | None:
     """The one contact the query names, else None (caller lists the candidates).
 
-    One search hit is taken as is. Among several, a hit whose file_as, "First Last" or
-    "Last First" equals the query (case and comma insensitive) wins.
+    Among the hits, one whose file_as, "First Last" or "Last First" equals the query (case
+    and comma insensitive) wins. A single hit is taken only when every word of the query is
+    a whole word of the contact ("Deb Roberg" is not "Roberg, Debbie"; "Pat" is not
+    "Patterson, Lee"), so a substring hit is never reported as the donor asked for.
     """
-    if len(contacts) == 1:
-        return contacts[0]
     q = _norm(query)
-    if not q:
+    if not q or not contacts:
         return None
     exact = []
     for c in contacts:
@@ -82,7 +96,11 @@ def pick_contact(contacts: list, query: str) -> dict | None:
         forms = {_norm(c.get("file_as")), _norm(f"{first} {last}"), _norm(f"{last} {first}"), _norm(c.get("org_name"))}
         if q in forms:
             exact.append(c)
-    return exact[0] if len(exact) == 1 else None
+    if len(exact) == 1:
+        return exact[0]
+    if len(contacts) == 1 and set(q.split()) <= _words(contacts[0]):
+        return contacts[0]
+    return None
 
 
 SEARCH_LIMIT = 100  # the API's default page; a search that fills it may be cut off
@@ -219,7 +237,7 @@ def main(argv=None) -> int:
                     return 2
                 raise
         else:
-            found = rows(fetch_json("/api/v1/contacts", {"search": args.name, "limit": SEARCH_LIMIT}, api_key))
+            found = rows(fetch_json("/api/v1/contacts", {"search": search_term(args.name), "limit": SEARCH_LIMIT}, api_key))
             contact = pick_contact(found, args.name)
             if contact is None:
                 print(describe_contacts(found))

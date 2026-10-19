@@ -71,8 +71,21 @@ def test_pick_contact_exact_file_as_or_first_last_wins_over_a_looser_match(mod):
     assert mod.pick_contact(CONTACTS, "example, pat")["id"] == 1001
 
 
-def test_pick_contact_single_match_is_returned(mod):
-    assert mod.pick_contact(CONTACTS[1:], "P. Example")["id"] == 1001
+def test_pick_contact_single_hit_needs_a_whole_word_match(mod):
+    # r2-2: the API search is a substring match, so a lone hit is not proof
+    assert mod.pick_contact(CONTACTS[1:], "Pat Example")["id"] == 1001
+    assert mod.pick_contact(CONTACTS[1:], "example")["id"] == 1001
+    patterson = [{"id": 1003, "file_as": "Patterson, Lee", "first_name": "Lee", "last_name": "Patterson"}]
+    assert mod.pick_contact(patterson, "Pat") is None
+    assert mod.pick_contact(CONTACTS[1:], "P. Example") is None
+
+
+def test_search_term_is_the_last_word_of_the_query(mod):
+    # r2-1: GET /contacts?search= is one %term% match over the name fields
+    assert mod.search_term("Pat Example") == "example"
+    assert mod.search_term("Example, Pat") == "pat"
+    assert mod.search_term("Example") == "example"
+    assert mod.search_term("") == ""
 
 
 def test_pick_contact_is_none_when_ambiguous_or_empty(mod):
@@ -237,11 +250,13 @@ def _run(mod, monkeypatch, argv, responses, capsys):
     return code, out.out, out.err, calls
 
 
-def test_main_prints_the_report_with_two_requests_when_ids_are_known(mod, monkeypatch, capsys):
+def test_main_searches_by_surname_and_picks_the_exact_name_with_two_requests(mod, monkeypatch, capsys):
+    # r2-8: the fake answers the surname search with every Example, as the live API would
     code, out, _err, calls = _run(mod, monkeypatch, ["Pat Example"],
-                                  {"/api/v1/contacts": [CONTACTS[1]], "/api/v1/pledges": [PLEDGE]}, capsys)
+                                  {"/api/v1/contacts": CONTACTS, "/api/v1/pledges": [PLEDGE]}, capsys)
     assert code == 0 and "1 pledge" in out
     assert [c[0] for c in calls] == ["/api/v1/contacts", "/api/v1/pledges"]
+    assert calls[0][1]["search"] == "example"
 
 
 def test_main_contact_id_not_found_is_exit_2_not_an_outage(mod, monkeypatch, capsys):
