@@ -84,10 +84,16 @@ def pick_contact(contacts: list, query: str) -> dict | None:
     return exact[0] if len(exact) == 1 else None
 
 
-def describe_contacts(contacts: list) -> str:
+SEARCH_LIMIT = 100  # the API's default page; a search that fills it may be cut off
+
+
+def describe_contacts(contacts: list, limit: int = SEARCH_LIMIT) -> str:
     if not contacts:
         return "no contact matched"
-    lines = ["several contacts matched; rerun with --contact-id <id>:"]
+    head = "several contacts matched; rerun with --contact-id <id>:"
+    if len(contacts) >= limit:
+        head = f"several contacts matched (first {limit}; narrow the name); rerun with --contact-id <id>:"
+    lines = [head]
     for c in contacts:
         flag = " (deceased)" if c.get("deceased") else ""
         lines.append(f"  {c.get('id')}  {_label(c)}{flag}")
@@ -186,7 +192,7 @@ def main(argv=None) -> int:
         if args.contact_id is not None:
             contact = fetch_json(f"/api/v1/contacts/{args.contact_id}", None, api_key)
         else:
-            found = rows(fetch_json("/api/v1/contacts", {"search": args.name, "limit": 20}, api_key))
+            found = rows(fetch_json("/api/v1/contacts", {"search": args.name, "limit": SEARCH_LIMIT}, api_key))
             contact = pick_contact(found, args.name)
             if contact is None:
                 print(describe_contacts(found))
