@@ -178,6 +178,11 @@ GET /api/v1/tasks?campaign_id=900010
 Header: X-API-Key: [from TOOLS.md]
 ```
 
+An ask counts in the summary's `challenge` and `distinct_contacts_asked` when the history
+entry carries `is_challenge: true` as well as `campaign_id`; with `campaign_id` alone it
+counts in `total` and `distinct_contacts_all`. Set `is_challenge` when logging an ask under
+an appeal (`donor-log`'s example body leaves it false).
+
 The gifts filter lists whole gifts that have at least one split under the campaign (each
 once), with the gift's full `amount`; the summary's `gifts.total` sums the attributed split
 amounts. The two differ when a gift is split across campaigns, so report the summary
