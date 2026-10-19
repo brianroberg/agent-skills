@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from tests.conftest import SKILLS_DIR
+from tests.conftest import SKILLS_DIR, section as _section
 
 SCRIPT = SKILLS_DIR / "donor-gifts" / "scripts" / "pledges.py"
 SKILL = SKILLS_DIR / "donor-gifts" / "SKILL.md"
@@ -135,13 +135,6 @@ def test_money_formats_api_strings_and_numbers(mod):
 
 
 # ── SKILL.md parity ──
-
-
-def _section(text: str, heading: str) -> str:
-    m = re.search(rf"^(#+) {re.escape(heading)}\n", text, re.MULTILINE)
-    assert m, f"no '{heading}' section"
-    end = re.compile(rf"^#{{1,{len(m.group(1))}}} ", re.MULTILINE).search(text, m.end())
-    return text[m.end(): end.start() if end else len(text)]
 
 
 def test_skill_has_a_pledges_section_that_leads_with_the_script():
