@@ -43,7 +43,7 @@ This plugin follows a multi-agent architecture where Claude Code acts as an orch
 |-------|-------------|--------|
 | `/donor-ask` | Look up donors, contacts, giving stats, and activity | Read-only |
 | `/donor-log` | Log calls, visits, letters, and other interactions | Write |
-| `/donor-gifts` | Query giving data and record manual gifts | Read/Write |
+| `/donor-gifts` | Query giving data and pledges (`scripts/pledges.py`); record manual gifts | Read/Write |
 | `/donor-tasks` | Manage donor stewardship tasks (thank-you, follow-up) | Read/Write |
 | `/donor-sync` | Trigger DonorHub sync, manage pledges, export mailing lists | Read/Write |
 | `/donor-contact-manage` | Create, update, delete contacts and manage groups | Write |

@@ -132,7 +132,7 @@ GET https://donor-management.fly.dev/api/v1/pledges?contact_id={id}
 Header: X-API-Key: [from TOOLS.md]
 ```
 
-Add `?active_only=true` to show only active pledges.
+Defaults to active pledges only; add `&active_only=false` to include ended ones. For a one-command read of a contact's pledges use `donor-gifts` (`scripts/pledges.py`).
 
 ### Pledge Detail
 
@@ -150,7 +150,7 @@ GET https://donor-management.fly.dev/api/v1/pledges/frequencies
 Header: X-API-Key: [from TOOLS.md]
 ```
 
-Returns available frequencies: monthly, quarterly, semi-annual, annual.
+Returns the nine frequencies (`{id, name, months}`); the table is inlined in `donor-gifts` under Pledges.
 
 ### Create a Pledge
 

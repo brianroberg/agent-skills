@@ -55,6 +55,64 @@ Returns:
 - Average gift amount
 - Active pledge totals
 
+## Pledges
+
+A pledge is what a donor has said they will give, on a schedule; gifts are what arrived.
+For "what pledge is recorded for [name]?" run the script, which does the search, the
+pledge read and the frequency lookup in one go and prints one line per pledge:
+
+```
+python3 /home/claude/.claude/skills/agent-skills/skills/donor-gifts/scripts/pledges.py "Pat Example"
+python3 /home/claude/.claude/skills/agent-skills/skills/donor-gifts/scripts/pledges.py --contact-id 900001
+```
+
+(The absolute path is the deployed checkout; sessions run from `/workspace`, so a
+repo-relative path would not resolve. `900001` is a placeholder, not a real contact.)
+
+```
+Example, Pat (contact 900001) — 1 pledge
+  #501  $1,200.00 Annual since 2024-02-01 — current, good until 2026-12-31; last gift $1,250.00 on 2025-12-15
+```
+
+Read-only; `DONOR_API_KEY` from the environment, sent only over https and never on a
+redirect; two requests, one at a time (a third, the frequency table, only for a
+`frequency_id` outside the table below). Several name matches are listed with their ids
+and the script exits 2 — rerun with `--contact-id`; an unknown `--contact-id` is also
+exit 2 (`no contact N`), and 3 means the API failed. Ended pledges print `ended <date>`;
+a fixed-term pledge still running prints its status and `through <date>`; a raised or
+new pledge with no gift yet prints `awaiting first gift since <date>` — a raise sets that
+field by TntConnect's Pledge Received rule; the retroactive-raise correction is in the
+workspace `TOOLS.md`, SR Assistant section. `--json` prints the raw rows.
+
+The raw reads, if you need a field the report leaves out:
+
+```
+GET /api/v1/pledges?contact_id={id}&active_only=false
+GET /api/v1/pledges/frequencies
+Header: X-API-Key: [from TOOLS.md]
+```
+
+`GET /api/v1/pledges` defaults to `active_only=true`. Each row carries `amount` (a string),
+`frequency_id`, `start_date`, `end_date`, `is_active`, `awaiting_first_gift_since`,
+`campaign_id`, and a `status` object (`state` such as `current` or `outstanding`,
+`good_until`, `last_gift_date`, `last_gift_amount`, `behind_periods`), computed by TntConnect's
+Good Until rule. `frequency_id` maps through the frequency table, stable since the
+February 2026 migration (the script reads the live table and falls back to this one):
+
+| id | name | months |
+|---|---|---|
+| 1 | Monthly | 1 |
+| 2 | Quarterly | 3 |
+| 3 | Semi-Annual | 6 |
+| 4 | Annual | 12 |
+| 5 | Bi-Monthly | 2 |
+| 6 | Quad-Monthly | 4 |
+| 7 | Biennial | 24 |
+| 8 | Weekly | 0.23 |
+| 9 | Fortnightly | 0.46 |
+
+Pledge writes (create, raise, end) are in `donor-sync`.
+
 ## Recording Manual Gifts
 
 For gifts that don't come through DonorHub sync (IRA distributions, stock transfers, in-kind gifts, checks received directly):
@@ -142,6 +200,8 @@ Base URL: `https://donor-management.fly.dev`
 GET /api/v1/gifts                   — list gifts (?contact_id=N)
 GET /api/v1/gifts/{id}              — gift detail (with splits)
 GET /api/v1/contacts/{id}/summary   — computed giving stats
+GET /api/v1/pledges                 — list pledges (?contact_id=N&active_only=false)
+GET /api/v1/pledges/frequencies     — frequency ids → names (table above)
 ```
 
 **Write:**

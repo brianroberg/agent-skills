@@ -21,11 +21,11 @@ EMAIL_SKILLS = sorted(SKILLS_DIR.glob("email-*/SKILL.md"))
 READ_SKILLS = [SKILLS_DIR / "email-ask" / "SKILL.md", SKILLS_DIR / "email-triage" / "SKILL.md"]
 READ_ENDPOINTS = ("search", "summarize", "ask-about", "batch-summarize")
 
-_ids = lambda p: p.parent.name  # noqa: E731
+_ids = lambda p: p.parent.name
 
 
 def _bash_blocks(text: str) -> list[str]:
-    return re.findall(r"```bash\n(.*?)```", text, re.S)
+    return re.findall(r"```bash\n(.*?)```", text, re.DOTALL)
 
 
 def _read_curl_blocks(text: str) -> list[str]:
