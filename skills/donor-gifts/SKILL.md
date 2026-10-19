@@ -148,6 +148,12 @@ The summary is computed server-side, like the contact summary above. It returns
   pledges still in force on `as_of`).
 - `gifts` — gift splits carrying it: `split_count`, `total`.
 
+A gift gets its label when it is created: `POST /api/v1/gifts` (under *Recording Manual
+Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 500.00}`
+(`promise_id` is the other allowed key, for a pledge). `PUT /api/v1/gifts/{id}` has no
+`splits` field, so a gift recorded without one stays unattributed short of deleting and
+re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
+
 Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
 real campaign; the history and task reads themselves are in `donor-log` and `donor-tasks`):
 
