@@ -26,8 +26,10 @@ and a wrong sentence has the same effect as a wrong line of code.
   path (wrapper script, approval gate, diff-after-write) the workspace `TOOLS.md` names,
   and that the skill says what the write destroys.
 - **A script that prints a credential.** Scripts read `DONOR_API_KEY` and the agent
-  URLs from the environment. Nothing may print, log or write a key; the structural test
-  `test_no_hardcoded_credentials` and per-script tests pin this.
+  URLs from the environment. A key must not be printed, logged or written.
+  `test_no_hardcoded_credentials` catches a literal key in a SKILL.md and nothing else;
+  each script's own tests have to pin its output (as `test_script_never_prints_the_key`
+  does for `pledges.py`, by pattern, not by execution). Read the script's error paths.
 - **Real people in the repo.** Fixtures, examples and issue text use synthetic records
   in the live response shapes. A donor's name, id, amount or address in a tracked file is
   a defect, whatever the branch (Brian, 2026-10-19).
@@ -37,9 +39,10 @@ and a wrong sentence has the same effect as a wrong line of code.
 - The **command lines** a SKILL.md shows. The agent copies them. A renamed flag or moved
   script breaks every session that loads the skill, with no test to say so unless one
   is added.
-- The **output lines** a script prints. Skills and heartbeat checklists relay them
-  verbatim and sometimes parse them (`exit 2` means "ambiguous, rerun with an id").
-  Changing wording or an exit code is an interface change.
+- The **output lines and exit codes** a script produces. Skills and heartbeat checklists
+  relay the lines verbatim and branch on the code (for `pledges.py`, 2 covers every
+  caller-side problem: bad input, no key, no or several matches; 3 is the API failing).
+  Changing wording or a code is an interface change.
 - The **frontmatter** (`name`, `description`): it is what makes a skill load at all.
 
 ## What reviewers tend to miss here
