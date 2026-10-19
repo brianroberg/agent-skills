@@ -328,7 +328,7 @@ GET /api/v1/gifts/{id}              — gift detail (with splits)
 GET /api/v1/contacts/{id}/summary   — computed giving stats
 GET /api/v1/pledges                 — list pledges (?contact_id=N&active_only=false)
 GET /api/v1/pledges/frequencies     — frequency ids → names (table above)
-GET /api/v1/campaigns               — list campaigns (?is_active=true|false; none as of 2026-10-19)
+GET /api/v1/campaigns               — list campaigns (?is_active=true|false)
 GET /api/v1/campaigns/{id}          — campaign detail
 GET /api/v1/campaigns/{id}/summary  — asks, commitments and gifts attributed to a campaign
 ```
