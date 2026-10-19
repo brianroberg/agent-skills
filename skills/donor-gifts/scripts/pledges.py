@@ -16,6 +16,7 @@ answered with an error.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import sys
@@ -109,35 +110,41 @@ def money(v) -> str:
         return str(v)
 
 
-def _pledge_line(p: dict, freqs: list | None) -> str:
+def _pledge_line(p: dict, freqs: list | None, today: dt.date) -> str:
     head = f"  #{p.get('id')}  {money(p.get('amount'))} {frequency_name(p.get('frequency_id'), freqs)}"
     if p.get("start_date"):
         head += f" since {p['start_date']}"
+    end = p.get("end_date")
+    ended = p.get("is_active") is False or (bool(end) and end <= today.isoformat())
     notes = []
-    if p.get("end_date") or p.get("is_active") is False:
-        notes.append(f"ended {p.get('end_date') or '(date not recorded)'}")
     st = p.get("status") or {}
-    if not notes and st.get("state"):
-        s = st["state"]
-        if st.get("good_until"):
-            s += f", good until {st['good_until']}"
-        notes.append(s)
+    if ended:
+        notes.append(f"ended {end or '(date not recorded)'}")
+    else:
+        if st.get("state"):
+            s = st["state"]
+            if st.get("good_until"):
+                s += f", good until {st['good_until']}"
+            notes.append(s)
+        if end:
+            notes.append(f"through {end}")  # a fixed-term pledge still running
     if p.get("awaiting_first_gift_since"):
         notes.append(f"awaiting first gift since {p['awaiting_first_gift_since']}")
     if st.get("last_gift_date"):
         notes.append(f"last gift {money(st.get('last_gift_amount'))} on {st['last_gift_date']}")
-    if p.get("notes"):
-        notes.append(f"notes: {p['notes']}")
     return head + (" — " + "; ".join(notes) if notes else "")
 
 
-def format_report(contact: dict, pledges: list, freqs: list | None) -> str:
+def format_report(contact: dict, pledges: list, freqs: list | None, today: dt.date | None = None) -> str:
+    today = today or dt.date.today()
     who = f"{_label(contact)} (contact {contact.get('id')})"
+    if contact.get("deceased"):
+        who += " (deceased)"
     if not pledges:
         return f"{who} — no pledges on record"
     n = len(pledges)
     lines = [f"{who} — {n} pledge{'s' if n != 1 else ''}"]
-    lines += [_pledge_line(p, freqs) for p in sorted(pledges, key=lambda p: (p.get("is_active") is False, p.get("start_date") or ""))]
+    lines += [_pledge_line(p, freqs, today) for p in sorted(pledges, key=lambda p: (p.get("is_active") is False, p.get("start_date") or ""))]
     return "\n".join(lines)
 
 
