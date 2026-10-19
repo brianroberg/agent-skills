@@ -55,6 +55,14 @@ DONOR_ENDPOINTS = {
     "DELETE /api/v1/pledges/{id}": {"description": "Delete pledge", "domain": "donor"},
     "GET /api/v1/pledges/frequencies": {"description": "List pledge frequencies", "domain": "donor"},
     "POST /api/v1/pledges/{id}/deactivate": {"description": "Deactivate pledge", "domain": "donor"},
+    # Campaigns — brianroberg/sr-assistant#42 (merged 2026-09-17). TntConnect's appeal:
+    # a label gifts, pledges, history entries and tasks can carry.
+    "GET /api/v1/campaigns": {"description": "List campaigns (?is_active=true|false)", "domain": "donor"},
+    "GET /api/v1/campaigns/{id}": {"description": "Get campaign detail", "domain": "donor"},
+    "GET /api/v1/campaigns/{id}/summary": {"description": "Campaign totals: asks, commitments, gifts", "domain": "donor"},
+    "POST /api/v1/campaigns": {"description": "Create campaign (201)", "domain": "donor"},
+    "PUT /api/v1/campaigns/{id}": {"description": "Update campaign (omitted keys untouched)", "domain": "donor"},
+    "DELETE /api/v1/campaigns/{id}": {"description": "Delete campaign (204; 409 if anything references it)", "domain": "donor"},
     # Groups
     "GET /api/v1/groups": {"description": "List groups", "domain": "donor"},
     "GET /api/v1/groups/{id}": {"description": "Get group with members", "domain": "donor"},
