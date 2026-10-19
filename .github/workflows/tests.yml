@@ -1,0 +1,40 @@
+name: tests
+
+# Two jobs, deliberately separate (agent-skills issue #8):
+#  - `offline`: every push to main and every pull request. Runs the suite minus the
+#    tests marked `network`, so a red check always means the change under review.
+#  - `live-spec`: weekly, or by hand. Runs only the `network` tests, which compare the
+#    skills' endpoint registry with the live donor API's openapi.json. A red run here
+#    means the API changed and the registry needs updating — never that a PR is bad.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 11 * * 1"   # Mondays 11:17 UTC (07:17 ET in summer, 06:17 in winter)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv run --extra api pytest -m "not network" -q
+
+  live-spec:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv run --extra api pytest -m network -v

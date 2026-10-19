@@ -140,6 +140,12 @@ uv run pytest tests/ -v
 
 The API coverage tests ensure every endpoint in the Donor Management API is referenced by at least one skill, preventing future documentation drift.
 
+**CI (`.github/workflows/tests.yml`):** every push to `main` and every pull request runs
+the suite minus the `network` tests, so a red check means the change under review. The
+`network` tests (live donor-API spec vs. the endpoint registry) run on a weekly schedule
+and on demand from the Actions tab; a red weekly run means the API changed and
+`tests/api_specs.py` needs updating, not that a PR is wrong.
+
 ## Updating
 
 This plugin is designed for easy updates across multiple environments.
