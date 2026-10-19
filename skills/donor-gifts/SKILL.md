@@ -169,6 +169,11 @@ GET /api/v1/tasks?campaign_id=900010
 Header: X-API-Key: [from TOOLS.md]
 ```
 
+The gifts filter lists whole gifts that have at least one split under the campaign (each
+once), with the gift's full `amount`; the summary's `gifts.total` sums the attributed split
+amounts. The two differ when a gift is split across campaigns, so report the summary
+figure as the campaign's giving and the list as the gifts behind it.
+
 **Writes** (agent_readwrite key). Send one when Brian asked for that specific change; if
 the permission check refuses it, write out the exact request — route, id and body — and
 hand it to him rather than retrying another way.
