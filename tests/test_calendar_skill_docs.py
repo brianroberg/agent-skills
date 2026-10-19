@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import SKILLS_DIR
+from tests.conftest import section as _section
 
 CALENDAR_SKILLS = sorted(SKILLS_DIR.glob("calendar-*/SKILL.md"))
 DELETE_SKILL = SKILLS_DIR / "calendar-delete-event" / "SKILL.md"
@@ -27,28 +28,6 @@ ASK_SKILL = SKILLS_DIR / "calendar-ask" / "SKILL.md"
 
 WRAPPER_SCRIPT = "scripts/calendar-delete-event.sh"
 
-
-def _section(text: str, heading: str) -> str:
-    """Return the body of the markdown section whose heading line is `heading`.
-
-    Runs from the heading to the next heading of the same or higher level, so a
-    `##` section includes its `###` children but stops at the next `##`.
-    """
-    lines = text.splitlines()
-    level = len(heading) - len(heading.lstrip("#"))
-    start = None
-    for i, line in enumerate(lines):
-        if line.strip() == heading:
-            start = i
-            break
-    assert start is not None, f"heading {heading!r} not found"
-    body = []
-    for line in lines[start + 1 :]:
-        m = re.match(r"^(#+)\s", line)
-        if m and len(m.group(1)) <= level:
-            break
-        body.append(line)
-    return "\n".join(body)
 
 
 def _fenced_blocks(text: str) -> list[str]:

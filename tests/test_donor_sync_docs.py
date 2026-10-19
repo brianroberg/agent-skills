@@ -15,6 +15,7 @@ These tests read the SKILL.md only; they make no network calls.
 import re
 
 from tests.conftest import SKILLS_DIR
+from tests.conftest import section as _section
 
 SKILL = SKILLS_DIR / "donor-sync" / "SKILL.md"
 
@@ -22,15 +23,6 @@ SKILL = SKILLS_DIR / "donor-sync" / "SKILL.md"
 def _text() -> str:
     return SKILL.read_text()
 
-
-def _section(text: str, heading: str) -> str:
-    """The body under `heading`, up to the next heading of the same or a higher level."""
-    m = re.search(rf"^(#+) {re.escape(heading)}\n", text, re.MULTILINE)
-    assert m, f"no '{heading}' section"
-    end = re.compile(rf"^#{{1,{len(m.group(1))}}} ", re.MULTILINE).search(text, m.end())
-    body = text[m.end() : end.start() if end else len(text)]
-    assert body.strip(), f"the '{heading}' section is empty"
-    return body
 
 
 def _norm(text: str) -> str:

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -34,10 +35,8 @@ def parse_frontmatter(path: Path) -> dict:
 def section(text: str, heading: str) -> str:
     """The body under `heading`, up to the next heading of the same or a higher level.
 
-    Shared by the doc-parity tests; the older test files still carry a private copy.
+    Shared by the doc-parity tests.
     """
-    import re
-
     m = re.search(rf"^(#+) {re.escape(heading)}\n", text, re.MULTILINE)
     assert m, f"no '{heading}' section"
     end = re.compile(rf"^#{{1,{len(m.group(1))}}} ", re.MULTILINE).search(text, m.end())
