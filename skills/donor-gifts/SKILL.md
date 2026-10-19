@@ -152,7 +152,8 @@ parameter, so a figure as of a past date is not available from it) and three obj
 
 A gift gets its label when it is created: `POST /api/v1/gifts` (under *Recording Manual
 Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 500.00}`
-(`promise_id` is the other allowed key, for a pledge). `PUT /api/v1/gifts/{id}` has no
+(a split may also carry `promise_id`, applying that same split to a pledge; the two keys
+go together on one split when an appeal gift is also a pledge gift). `PUT /api/v1/gifts/{id}` has no
 `splits` field, so a gift recorded without one stays unattributed short of deleting and
 re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
 
