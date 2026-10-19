@@ -156,6 +156,13 @@ Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 50
 `splits` field, so a gift recorded without one stays unattributed short of deleting and
 re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
 
+Attribution changes how the pledge standing reads the gift (TntConnect's rule, in the
+API's commitment-status service): a campaign-linked gift counts toward a pledge whose
+period is six months or longer (semi-annual, annual, biennial) and is left out of the
+standing of a shorter one (weekly through quad-monthly). A monthly donor's regular gift
+recorded under an appeal therefore reads as a missed period. Attribute a gift when Brian
+means it as an appeal gift, and say so when the donor has a short-period pledge.
+
 Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
 real campaign). The history and task reads and the pledge writes are documented in
 `donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is this
