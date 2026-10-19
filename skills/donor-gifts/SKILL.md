@@ -165,11 +165,12 @@ recorded under an appeal therefore reads as a missed period. Attribute a gift wh
 means it as an appeal gift, and say so when the donor has a short-period pledge.
 
 Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
-real campaign). The history and task reads and the pledge writes are documented in
-`donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is this
-section's. `campaign_id` is also an optional key on the POST and PUT bodies for pledges,
-history entries and tasks, so an ask, commitment or task logged under an appeal sets it
-there:
+real campaign). The history, task and pledge reads and writes themselves are documented
+in `donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is
+this section's. `campaign_id` is an optional key on the POST and PUT bodies for history
+entries (`donor-log`), tasks (`donor-tasks`) and pledges (`donor-sync`): add it to that
+skill's body to log an ask, task or commitment under an appeal, send `"campaign_id": null`
+on PUT to detach one, and expect a 400 `Invalid campaign_id` for an id that does not exist:
 
 ```
 GET /api/v1/gifts?campaign_id=900010
