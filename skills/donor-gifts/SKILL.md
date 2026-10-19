@@ -62,20 +62,27 @@ For "what pledge is recorded for [name]?" run the script, which does the search,
 pledge read and the frequency lookup in one go and prints one line per pledge:
 
 ```
-python3 skills/donor-gifts/scripts/pledges.py "Pat Example"
-python3 skills/donor-gifts/scripts/pledges.py --contact-id 1001
+python3 /home/claude/.claude/skills/agent-skills/skills/donor-gifts/scripts/pledges.py "Pat Example"
+python3 /home/claude/.claude/skills/agent-skills/skills/donor-gifts/scripts/pledges.py --contact-id 900001
 ```
 
+(The absolute path is the deployed checkout; sessions run from `/workspace`, so a
+repo-relative path would not resolve. `900001` is a placeholder, not a real contact.)
+
 ```
-Example, Pat (contact 1001) — 1 pledge
+Example, Pat (contact 900001) — 1 pledge
   #501  $1,200.00 Annual since 2024-02-01 — current, good until 2026-12-31; last gift $1,250.00 on 2025-12-15
 ```
 
-Read-only; `DONOR_API_KEY` from the environment; three requests at most, one at a time.
-Several name matches are listed with their ids and the script exits 2 — rerun with
-`--contact-id`. Ended pledges print `ended <date>`; a raised or new pledge with no gift yet
-prints `awaiting first gift since <date>` (see `donor-sync` for why a raise sets that).
-`--json` prints the raw rows.
+Read-only; `DONOR_API_KEY` from the environment, sent only over https and never on a
+redirect; two requests, one at a time (a third, the frequency table, only for a
+`frequency_id` outside the table below). Several name matches are listed with their ids
+and the script exits 2 — rerun with `--contact-id`; an unknown `--contact-id` is also
+exit 2 (`no contact N`), and 3 means the API failed. Ended pledges print `ended <date>`;
+a fixed-term pledge still running prints its status and `through <date>`; a raised or
+new pledge with no gift yet prints `awaiting first gift since <date>` — a raise sets that
+field by TntConnect's Pledge Received rule; the retroactive-raise correction is in the
+workspace `TOOLS.md`, SR Assistant section. `--json` prints the raw rows.
 
 The raw reads, if you need a field the report leaves out:
 
