@@ -348,10 +348,10 @@ def test_skill_command_lines_use_the_deployed_absolute_path():
 def test_skill_points_awaiting_first_gift_explanation_at_tools_md_not_donor_sync():
     # r1 finding 3: donor-sync has no such explanation
     sec = _section(SKILL.read_text(), "Pledges")
-    sentence = re.search(r"[^.]*awaiting first gift[^.]*\.", sec)
-    assert sentence, "the Pledges section must explain the awaiting-first-gift line"
-    assert "TOOLS.md" in sentence.group(0)
-    assert "donor-sync" not in sentence.group(0), "donor-sync does not explain the rule"
+    para = next((p for p in sec.split("\n\n") if "awaiting first gift" in p), None)
+    assert para, "the Pledges section must explain the awaiting-first-gift line"
+    assert "TOOLS.md" in para
+    assert "donor-sync" not in para, "donor-sync does not explain the rule"
 
 
 def test_donor_sync_pledge_reads_agree_with_donor_gifts():
