@@ -202,6 +202,16 @@ def test_past_end_date_or_inactive_is_ended(mod):
     assert "ended 2026-01-31" in out and "ended (date not recorded)" in out
 
 
+def test_end_date_today_is_still_running_and_date_ended_pledges_sort_last(mod):
+    # r2-5: the API's active_only treats end_date as inclusive; r2-6: sort agrees with the label
+    today_end = dict(PLEDGE, id=510, end_date=TODAY.isoformat())
+    assert "ended" not in mod.format_report(CONTACTS[1], [today_end], FREQS, today=TODAY)
+    dead = dict(PLEDGE, id=511, end_date="2025-01-01", start_date="2023-01-01")      # active flag, past date
+    live = dict(PLEDGE, id=512, start_date="2026-01-01")
+    lines = mod.format_report(CONTACTS[1], [dead, live], FREQS, today=TODAY).splitlines()
+    assert lines[1].startswith("  #512") and "ended 2025-01-01" in lines[2]
+
+
 def test_report_flags_a_deceased_contact(mod):
     out = mod.format_report(dict(CONTACTS[1], deceased=True), [PLEDGE], FREQS, today=TODAY)
     assert out.splitlines()[0].endswith("— 1 pledge") and "(deceased)" in out.splitlines()[0]

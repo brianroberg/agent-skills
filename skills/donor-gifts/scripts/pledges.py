@@ -137,12 +137,19 @@ def money(v) -> str:
         return str(v)
 
 
+def _ended(p: dict, today: dt.date) -> bool:
+    """Ended when flagged inactive or the end_date has passed; end_date itself is inclusive,
+    as the API's active_only filter treats it."""
+    end = p.get("end_date")
+    return p.get("is_active") is False or (bool(end) and end < today.isoformat())
+
+
 def _pledge_line(p: dict, freqs: list | None, today: dt.date) -> str:
     head = f"  #{p.get('id')}  {money(p.get('amount'))} {frequency_name(p.get('frequency_id'), freqs)}"
     if p.get("start_date"):
         head += f" since {p['start_date']}"
     end = p.get("end_date")
-    ended = p.get("is_active") is False or (bool(end) and end <= today.isoformat())
+    ended = _ended(p, today)
     notes = []
     st = p.get("status") or {}
     if ended:
@@ -171,7 +178,7 @@ def format_report(contact: dict, pledges: list, freqs: list | None, today: dt.da
         return f"{who} — no pledges on record"
     n = len(pledges)
     lines = [f"{who} — {n} pledge{'s' if n != 1 else ''}"]
-    lines += [_pledge_line(p, freqs, today) for p in sorted(pledges, key=lambda p: (p.get("is_active") is False, p.get("start_date") or ""))]
+    lines += [_pledge_line(p, freqs, today) for p in sorted(pledges, key=lambda p: (_ended(p, today), p.get("start_date") or ""))]
     return "\n".join(lines)
 
 
