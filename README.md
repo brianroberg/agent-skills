@@ -46,6 +46,7 @@ This plugin follows a multi-agent architecture where Claude Code acts as an orch
 | `/donor-gifts` | Query giving data and pledges (`scripts/pledges.py`); record manual gifts | Read/Write |
 | `/donor-tasks` | Manage donor stewardship tasks (thank-you, follow-up) | Read/Write |
 | `/regression-test` | Browser regression pass against a seeded, never-production server before a UI-touching PR is called ready (regression-kit) | Local/CI run; records on the PR |
+| `/review-loop` | The adversarial review loop before any PR is called ready: depth by diff, fix per commit, two-round cap, labels and review record on the PR | Writes PR labels and comments |
 | `/donor-sync` | Trigger DonorHub sync, manage pledges, export mailing lists | Read/Write |
 | `/donor-contact-manage` | Create, update, delete contacts and manage groups | Write |
 
@@ -120,6 +121,10 @@ Or describe what you want naturally and Claude Code will select the appropriate 
 ## Testing
 
 The project includes a test suite that validates skill files structurally and checks API endpoint coverage.
+
+The practices that govern agent-produced code in every repo (TDD, never commit on red, no
+PII, the review loop, labels) are in `docs/engineering-practices.md`; `REVIEW.md` is this
+repo's own reviewer guide.
 
 ```bash
 # Install dependencies
