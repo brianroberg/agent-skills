@@ -122,6 +122,10 @@ Or describe what you want naturally and Claude Code will select the appropriate 
 
 The project includes a test suite that validates skill files structurally and checks API endpoint coverage.
 
+The practices that govern agent-produced code in every repo (TDD, never commit on red, no
+PII, the review loop, labels) are in `docs/engineering-practices.md`; `REVIEW.md` is this
+repo's own reviewer guide.
+
 ```bash
 # Install dependencies
 uv sync
