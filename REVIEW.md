@@ -44,6 +44,11 @@ and a wrong sentence has the same effect as a wrong line of code.
   caller-side problem: bad input, no key, no or several matches; 3 is the API failing).
   Changing wording or a code is an interface change.
 - The **frontmatter** (`name`, `description`): it is what makes a skill load at all.
+- The **plugin version** (`.claude-plugin/plugin.json`, mirrored in `marketplace.json`). On a
+  machine that installs this repo as a plugin, Claude Code decides whether an update exists
+  by that version string, so a PR that changes anything under `skills/` must bump it in both
+  files or the change is invisible to `/plugin update`. `tests/test_plugin_manifest.py` pins
+  the two files equal; the bump itself is the reviewer's check.
 
 ## What reviewers tend to miss here
 
