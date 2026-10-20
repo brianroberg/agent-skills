@@ -1,6 +1,6 @@
 ---
 name: donor-gifts
-description: "Use when the user asks about giving data: 'who gave recently?', 'giving report', 'how much has [name] given?', 'record a gift', 'gift history', 'donations this year', or wants to query or record gifts in the donor management system."
+description: "Use when the user asks about giving data: 'who gave recently?', 'giving report', 'how much has [name] given?', 'record a gift', 'gift history', 'donations this year', 'how is the [appeal] campaign doing?', or wants to query or record gifts in the donor management system."
 ---
 
 # Donor Gifts — Giving Data & Manual Entry
@@ -12,6 +12,8 @@ Query giving history and record manual gifts (e.g., IRA distributions, stock tra
 **Queries:** "who gave recently?," "giving report," "how much has [name] given?," "gift history," "donations this year."
 
 **Recording:** "record a gift," "log a donation," "enter an IRA distribution," "[name] gave $500."
+
+**Campaigns:** "how is the [appeal] campaign doing?," "set up a campaign for the spring appeal," "which gifts came in under [campaign]?"
 
 ## Querying Gifts
 
@@ -113,6 +115,128 @@ February 2026 migration (the script reads the live table and falls back to this 
 
 Pledge writes (create, raise, end) are in `donor-sync`.
 
+## Campaigns
+
+A campaign is TntConnect's appeal idea: a label that gifts (through their splits), pledges,
+history entries and tasks can carry, so one appeal's asks, commitments and giving can be
+read together. The routes are live (brianroberg/sr-assistant#42, merged 2026-09-17), but
+**as of 2026-10-19 no campaigns exist in production** (`GET /api/v1/campaigns` returned `[]`
+that day). That is a snapshot, not a rule: call the list rather than assume, and treat an
+empty result as expected rather than an error until Brian has created one.
+
+Reads:
+
+```
+GET https://donor-management.fly.dev/api/v1/campaigns?is_active=true
+GET https://donor-management.fly.dev/api/v1/campaigns/{id}
+GET https://donor-management.fly.dev/api/v1/campaigns/{id}/summary
+Header: X-API-Key: [from TOOLS.md]
+```
+
+The list comes newest first; `is_active` is optional, and `skip`/`limit` page it (default
+100, max 500). A list row carries `id`, `name`, `is_active`, `begin_date`, `end_date` and
+`goal`; the detail adds `description`, `created_at` and `updated_at`. `goal` and the
+summary's amounts are strings, as pledge amounts are.
+
+The summary is computed server-side, like the contact summary above. It returns
+`campaign_id`, `as_of` (the server's date when it answered; the summary takes no date
+parameter, so a figure as of a past date is not available from it) and three objects:
+- `asks` — history entries carrying the campaign: `total`, `challenge`, `non_challenge`,
+  `by_result` (rows of `{history_result_id, count}`, the null result last),
+  `distinct_contacts_asked` (people on `is_challenge` entries, each once) and
+  `distinct_contacts_all`.
+- `commitments` — pledges carrying it: `count`, `active_count`, `monthly_equivalent`,
+  `active_monthly_equivalent` (amount ÷ frequency months, summed; the active pair counts
+  pledges still in force on `as_of`).
+- `gifts` — gift splits carrying it: `split_count`, `total`.
+
+A gift gets its label when it is created: `POST /api/v1/gifts` (under *Recording Manual
+Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 500.00}`
+(a split may also carry `promise_id`, applying that same split to a pledge; the two keys
+go together on one split when an appeal gift is also a pledge gift). `PUT /api/v1/gifts/{id}` has no
+`splits` field, so a gift recorded without one stays unattributed short of deleting and
+re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
+
+Attribution changes how the pledge standing reads the gift (TntConnect's rule, in the
+API's commitment-status service): a campaign-linked gift counts toward a pledge whose
+period is six months or longer (semi-annual, annual, biennial) and is left out of the
+standing of a shorter one (weekly through quad-monthly). A monthly donor's regular gift
+recorded under an appeal therefore reads as a missed period. Attribute a gift when Brian
+means it as an appeal gift, and say so when the donor has a short-period pledge.
+
+Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
+real campaign). The history, task and pledge reads and writes themselves are documented
+in `donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is
+this section's. `campaign_id` is an optional key on the POST and PUT bodies for history
+entries (`donor-log`), tasks (`donor-tasks`) and pledges (`donor-sync`): add it to that
+skill's body to log an ask, task or commitment under an appeal, send `"campaign_id": null`
+on PUT to detach one, and expect a 400 `Invalid campaign_id` for an id that does not exist:
+
+```
+GET /api/v1/gifts?campaign_id=900010
+GET /api/v1/pledges?campaign_id=900010
+GET /api/v1/history?campaign_id=900010
+GET /api/v1/tasks?campaign_id=900010
+Header: X-API-Key: [from TOOLS.md]
+```
+
+An ask counts in the summary's `challenge` and `distinct_contacts_asked` when the history
+entry carries `is_challenge: true` as well as `campaign_id`; with `campaign_id` alone it
+counts in `total` and `distinct_contacts_all`. Set `is_challenge` when logging an ask under
+an appeal (`donor-log`'s example body leaves it false).
+
+The gifts filter lists whole gifts that have at least one split under the campaign (each
+once), with the gift's full `amount`; the summary's `gifts.total` sums the attributed split
+amounts. The two differ when a gift is split across campaigns, so report the summary
+figure as the campaign's giving and the list as the gifts behind it.
+
+**Writes** (agent_readwrite key). Send one when Brian asked for that specific change; if
+the permission check refuses it, write out the exact request — route, id and body — and
+hand it to him rather than retrying another way.
+
+```
+POST https://donor-management.fly.dev/api/v1/campaigns
+Header: X-API-Key: [from TOOLS.md]
+Body: {
+  "name": "Spring Appeal (example)",
+  "description": "Placeholder campaign for the skill text",
+  "begin_date": "2026-03-01",
+  "end_date": "2026-05-31",
+  "goal": 25000.00
+}
+```
+
+`name` is required (1–100 characters); `description`, `begin_date`, `end_date` and `goal`
+are optional and `is_active` defaults to true. `goal`, when sent, is a positive amount (`0` is
+a 422), checked to two decimal places when sent as a string; to remove a goal on PUT send
+`null`, not `0`. Returns 201 with the full campaign. Both writes run the begin/end
+ordering check and answer 422 when it fails.
+
+```
+PUT https://donor-management.fly.dev/api/v1/campaigns/{id}
+Header: X-API-Key: [from TOOLS.md]
+Body: { "is_active": false }
+```
+
+PUT has PATCH semantics: an omitted key is untouched, and an explicit null for
+`begin_date`, `end_date` or `goal` clears it. A null `name` or `is_active` is a 422.
+
+```
+DELETE https://donor-management.fly.dev/api/v1/campaigns/{id}
+Header: X-API-Key: [from TOOLS.md]
+```
+
+Deletes the campaign row itself (204). While a gift split, pledge, history entry or task
+still references it the API refuses with 409; its `detail` names each kind of referrer in
+prose (history entries, pledges, tasks, gift splits) with what can be done about it, and
+the attributions are not nulled. A second 409, "still referenced by rows written after the
+reference check", means a reference landed mid-delete: retry once those rows are
+reassigned. Pledges, history entries and tasks can be moved off it
+with their own PUT (`campaign_id`); a gift split cannot be re-pointed through the API (the
+409 says so), so a gift under the campaign stays there short of deleting and re-creating
+the gift, which *Deleting Gifts* rules out for a synced one. To retire an appeal that has
+activity under it, set `is_active: false` instead.
+
 ## Recording Manual Gifts
 
 For gifts that don't come through DonorHub sync (IRA distributions, stock transfers, in-kind gifts, checks received directly):
@@ -144,6 +268,9 @@ Body: {
 - `amount` (required) — gift amount as a decimal
 - `memo` — description/purpose of the gift
 - `payment_method` — how the gift was made (check, cash, stock, wire, etc.)
+- `splits` — optional list of `{campaign_id, promise_id, amount}` allocations (see
+  *Campaigns*); split amounts may sum to less than `amount` but not more (422), and a
+  `campaign_id` or `promise_id` that does not exist is a 400
 
 **Important:** Do NOT set `external_gift_code` for manual gifts — leave it null. This field is used by the DonorHub sync to track imported gifts. Setting it on a manual gift could cause sync conflicts.
 
@@ -202,11 +329,19 @@ GET /api/v1/gifts/{id}              — gift detail (with splits)
 GET /api/v1/contacts/{id}/summary   — computed giving stats
 GET /api/v1/pledges                 — list pledges (?contact_id=N&active_only=false)
 GET /api/v1/pledges/frequencies     — frequency ids → names (table above)
+GET /api/v1/campaigns               — list campaigns (?is_active=true|false)
+GET /api/v1/campaigns/{id}          — campaign detail
+GET /api/v1/campaigns/{id}/summary  — asks, commitments and gifts attributed to a campaign
 ```
+
+`?campaign_id=N` also filters `GET /api/v1/gifts`, `/pledges`, `/history` and `/tasks`.
 
 **Write:**
 ```
 POST   /api/v1/gifts                — create manual gift
 PUT    /api/v1/gifts/{id}           — update gift (memo, payment_method only)
 DELETE /api/v1/gifts/{id}           — delete gift
+POST   /api/v1/campaigns            — create campaign (201)
+PUT    /api/v1/campaigns/{id}       — update campaign (omitted keys untouched)
+DELETE /api/v1/campaigns/{id}       — delete campaign (204; 409 while anything references it)
 ```
