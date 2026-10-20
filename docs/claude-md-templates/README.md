@@ -50,5 +50,14 @@ Expected: `PRACTICES LOADED` from both; "no" from the first, "yes" from the seco
 ## Changing a rule later
 
 A rule change is a PR to this repo (editing `docs/engineering-practices.md`), merged by Brian,
-then `git pull` in `/Users/robergb/tools/agent-skills` on the Mac. The template itself only
-changes when the identity or delivery facts change.
+then `git pull` in `/Users/robergb/tools/agent-skills` on the Mac. The import line reads the
+checkout directly, so the pull is enough for the practices. The template itself only changes
+when the identity or delivery facts change.
+
+**Skills are different.** On the Mac the repo's `skills/` load through the `agent-skills`
+plugin, registered from the checkout as a directory marketplace (`/plugin marketplace add
+/Users/robergb/tools/agent-skills`, then `/plugin install agent-skills@brianroberg`; set up
+2026-10-20). The install is a cached copy at one commit, so a merged skill change reaches
+sessions only after `git pull` **and** `/plugin update agent-skills@brianroberg` (or
+`/reload-plugins`). A skill that exists in the checkout but not in a session's list is the
+sign the update step was skipped.
