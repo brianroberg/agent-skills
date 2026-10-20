@@ -16,7 +16,7 @@ reviewers there tend to miss.
 | The diff changes… | Depth |
 |---|---|
 | Docs, comments, tests, prose only | **No pipeline.** Read the diff yourself once, carefully, for contradictions with the rules it describes and for unbacked absolute claims. Label `reviewed:none` and say in the PR why. |
-| Contained code, not in a daily-use failure path | **Single pass**: `/code-review high <target>` on Opus, or Fable if it is the session model. |
+| Contained code, not in a daily-use failure path | **Single pass**: `/code-review high <target>`, run once, on Opus or Fable (not Sonnet; Brian, 2026-09-09). |
 | Failure behaviour, error mapping, or data writes in a service Brian uses daily | **Fable pipeline**: `/code-review high <target>` with finders and verifiers. |
 
 Put the level **first**: `/code-review high <target>`. A level after the target is not parsed
@@ -25,7 +25,8 @@ accident). One pipeline per batch when several small PRs touch the same code.
 
 **State the projected cost in one line before starting a pipeline**, so Brian can decline:
 a Fable pipeline has measured 1–3M tokens (an Opus pipeline of the same shape can exceed
-that); a single `/code-review medium` is roughly 100–150k. The agent cannot read the plan
+that); a single-agent `/code-review` is roughly 100–150k at `medium`, and one measured
+`high` single pass on Opus was about 186k. The agent cannot read the plan
 meter; saying the number out loud is the only budget control.
 
 **The reviewer ladder is Fable, then Opus.** Fable is the default; Opus is the substitute

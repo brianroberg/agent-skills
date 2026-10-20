@@ -45,8 +45,8 @@ A real person's name, contact id, amount, date of gift, address, email or family
 does not go into a tracked file, a fixture, a doc example, a test report, or an issue or
 PR body — in any repo, public or private (Brian, 2026-10-19). When a fixture needs a live
 response shape, read the live record to learn the shape, then write the fixture from
-scratch with synthetic values in that shape, with ids at or above 900000 so they cannot
-collide with a real record. Before any commit or post, grep the staged text for the names
+scratch with synthetic values in that shape, with ids at or above 900000, well above any
+real id seen so far. Before any commit or post, grep the staged text for the names
 and ids seen during the session. Brian's own name and the GitHub handles `brianroberg` and
 `brianroberg-agent` are fine.
 
@@ -79,7 +79,8 @@ Two labels, so the PR list answers "has this been checked" without opening it:
 - Depth, when a review ran: `review:<model>-<level>` (`review:fable-high`,
   `review:opus-medium`, …), recording what actually ran; never silently downgrade.
 
-`gh pr edit --add-label` fails on these repos, so apply labels over REST (a PR is an issue
+`gh pr edit --add-label` fails on these repos (seen on agent-skills and email-labeler), so
+apply labels over REST (a PR is an issue
 here): `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=reviewed:none'`.
 Update the labels on every push. The review record is a PR comment whose first line states
 the model, the effort and the finder/verifier counts.
