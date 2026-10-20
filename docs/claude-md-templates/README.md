@@ -31,6 +31,18 @@ cd $R; and git pull
 test -f ~/.claude/CLAUDE.md; and cat $R/docs/claude-md-templates/user.CLAUDE.md >> ~/.claude/CLAUDE.md; or cp $R/docs/claude-md-templates/user.CLAUDE.md ~/.claude/CLAUDE.md
 ```
 
+If `~/.claude/CLAUDE.md` already holds the `personal.CLAUDE.md` block from PR #26 (it begins
+`# Claude Code: Brian's own sessions`), replace that block rather than appending a second
+import:
+
+```fish
+set R /Users/robergb/tools/agent-skills
+set F ~/.claude/CLAUDE.md
+cp $F $F.bak
+sed -i '' '/^# Claude Code: Brian.s own sessions/,$d' $F
+cat $R/docs/claude-md-templates/user.CLAUDE.md >> $F
+```
+
 **Verify:** start one session the normal way and one through `claude-bot`, and ask each
 "what is the last line of the imported practices file, and are you acting as claude-bot?"
 Expected: `PRACTICES LOADED` from both; "no" from the first, "yes" from the second.
