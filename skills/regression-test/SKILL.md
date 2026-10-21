@@ -27,9 +27,15 @@ Two halves, both decided 2026-10-15:
 Projects that predate the kit keep working their own way until migrated:
 training-reports has `seeded-test-server` + `playwright-regression-test` (Playwright MCP walk);
 todo-api has `tests/test_functional.py` (the fixture the kit generalises); mlb-scores has
-pytest-playwright e2e against a fake upstream; mlbui has `e2e-regression` (live Docker stack).
+pytest-playwright e2e against a fake upstream.
 When you touch one of those, use what it has; **adding regression-kit is the first task of the
 next piece of work there**, not an afterthought.
+
+mlbui is on the kit (brianroberg/mlbui#83) and has two checks, and a PR there records both.
+`make test-functional` is its kit pass: Chromium through the pages against mlbui on stub
+upstreams, with no MLB.tv account. Its `e2e-regression` skill (live Docker stack, a real
+MLB.tv feed) stays as the live check before a PR is called done: a stub can show the pages
+work, not that a real feed plays.
 
 ## The seed (never production data)
 
