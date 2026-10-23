@@ -39,8 +39,9 @@ stored with an undocumented type cannot have that type echoed back through PATCH
 Send only the listed keys and values on create as well.
 
 A row read back from GET is **not** a valid write body: it also carries `id` and
-`contact_id` (and `address_block` for addresses), which the sub-resource routes reject
-with a 422. Send only the keys you are changing.
+`contact_id`, which the sub-resource routes reject with a 422. Send only the keys you are
+changing. (Address rows carried an always-null `address_block` until sr-assistant PR #112,
+merged 2026-10-23, dropped the column; a client that still sends it gets the same 422.)
 
 ## Writes and the permission check
 
