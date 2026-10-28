@@ -48,7 +48,10 @@ response shape, read the live record to learn the shape, then write the fixture 
 scratch with synthetic values in that shape, with ids at or above 900000, well above any
 real id seen so far. Before any commit or post, grep the staged text for the names
 and ids seen during the session. Brian's own name and the GitHub handles `brianroberg` and
-`brianroberg-agent` are fine.
+`brianroberg-agent` are fine. Exempt (Brian, 2026-10-28): professional baseball players' and
+umpires' names as published in public sources such as the MLB Stats API, and real recorded
+MLB API responses used as test fixtures. Everyone else stays covered, including Little
+League players and families.
 
 ## 6. Absolute claims only with a test
 
