@@ -49,11 +49,11 @@ scratch with synthetic values in that shape, with ids at or above 900000, well a
 real id seen so far. Before any commit or post, grep the staged text for the names
 and ids seen during the session. Brian's own name and the GitHub handles `brianroberg` and
 `brianroberg-agent` are fine. Exempt: public figures' names as they appear in public sources,
-such as politicians, clergy and a published author's byline (Brian, 2026-11-02); and
-professional baseball players' and umpires' names as published in public sources such as
-the MLB Stats API, with real recorded MLB API responses usable as test fixtures (Brian,
-2026-10-28). Private people stay covered, including donors, contacts, Little League players
-and families.
+such as politicians, a published author's byline, or a religious leader known well beyond
+one congregation, like a pope (Brian, 2026-11-02); and professional baseball players' and
+umpires' names as published in public sources such as the MLB Stats API, with real recorded
+MLB API responses usable as test fixtures (Brian, 2026-10-28). Private people stay covered,
+including donors, contacts, local pastors, Little League players and families.
 
 ## 6. Absolute claims only with a test
 
