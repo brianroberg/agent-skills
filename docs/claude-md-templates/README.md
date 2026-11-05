@@ -9,10 +9,15 @@ setups and in the agent container, which reads the same rules from its workspace
 |---|---|
 | `user.CLAUDE.md` | the import line and the canary check; a "When acting as claude-bot" section (commit identity, never push `main` / never merge, reviewer + assignee on every PR, no token in URLs) gated on `GIT_AUTHOR_NAME`, which the launcher sets; a place for personal preferences |
 
-**How the bot section is gated.** The `claude-bot` fish function sets `GIT_AUTHOR_NAME` to
+**How the bot section is gated.** The `claude-bot` launcher sets `GIT_AUTHOR_NAME` to
 `brianroberg-agent` before running `claude`. The template tells the session to check that
 variable at the start, so the same file gives a bot session the containment rules and a
 personal session only the shared practices.
+
+**Where the launcher lives.** It is a shell function kept outside this repo, in two copies
+that set the same environment: the fish original in `~/.config/fish/functions/claude-bot.fish`
+and a zsh port in `~/.zshrc` (added 2026-11-05). A change to one needs the same change in
+the other.
 
 **The canary.** The practices file ends with the line `PRACTICES LOADED`, and the template
 tells the session to say so if that line is not in its context. A broken import path then

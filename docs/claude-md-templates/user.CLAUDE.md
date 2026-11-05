@@ -14,10 +14,10 @@ line in your context, say so before doing anything else.
 
 ## When acting as claude-bot
 
-The `claude-bot` launcher (a fish function) sets `GIT_AUTHOR_NAME` to `brianroberg-agent`
-and puts the bot's GitHub token in `GH_TOKEN`. Run `echo $GIT_AUTHOR_NAME` at the start of a
-session; when it prints `brianroberg-agent`, you are the bot and these rules apply on top of
-the shared practices:
+The `claude-bot` launcher (a fish function, with a zsh port in `~/.zshrc`) sets
+`GIT_AUTHOR_NAME` to `brianroberg-agent` and puts the bot's GitHub token in `GH_TOKEN`. Run
+`echo $GIT_AUTHOR_NAME` at the start of a session; when it prints `brianroberg-agent`, you
+are the bot and these rules apply on top of the shared practices:
 
 - Commits are authored as `brianroberg-agent <298343047+brianroberg-agent@users.noreply.github.com>`;
   the launcher's `GIT_AUTHOR_*` / `GIT_COMMITTER_*` variables already do this, so do not run
