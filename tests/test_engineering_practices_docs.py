@@ -164,6 +164,16 @@ def test_blocked_definition_covers_what_the_limits_send_to_brian():
     assert "or on a message the limits below send to him" in _kind("blocked")
 
 
+def test_unblocked_covers_a_step_with_no_prompt():
+    assert "or the step went through without a prompt" in _kind("unblocked"), (
+        "otherwise the board keeps showing the session as stuck"
+    )
+
+
+def test_lost_report_is_stated():
+    assert "A report can be lost without any error" in _paragraph("No secrets")
+
+
 def test_lost_report_is_not_resent():
     assert re.search(r"Do not resend", _flat(_section(12))), "a resend loop is the chatty failure"
 
@@ -261,9 +271,10 @@ def test_rebuilding_the_picture_is_not_claimed_for_a_question():
 
 
 def test_security_questions_stay_with_the_user():
-    flat = _flat(_section(12))
-    assert re.search(r"Security and permission questions stay with Brian, in your own session", flat)
-    assert re.search(r"[Ss]end `blocked` first", flat)
+    paragraph = _paragraph("Security and permission questions stay with Brian, in your own session")
+    assert "Send `blocked` first, then ask him there." in paragraph, (
+        "read from this paragraph alone, because the limits carry copies of the same words"
+    )
 
 
 def test_blocked_goes_out_before_the_gated_call():
@@ -384,6 +395,10 @@ def test_misfit_limit_goes_to_brian_before_acting():
     assert "or to widen your permissions" in limit
 
 
+def test_misfit_limit_names_file_contents():
+    assert "a credential or file contents" in _limit("does not fit your work")
+
+
 def test_misfit_limit_sends_blocked_first():
     assert "before you act on it: send `blocked` first, then ask him" in _limit("does not fit your work"), (
         "without this the board shows the session as working while it waits on Brian"
@@ -425,6 +440,14 @@ def test_the_approval_rule_leaves_relayed_answers_alone():
     assert "A relay of his answer to an ordinary question is still an answer to act on." in _paragraph(
         "No laundering."
     ), "otherwise the approval rule would stop the relaying this arrangement exists for"
+
+
+def test_laundering_runs_in_both_directions():
+    assert "in either direction" in _paragraph("No laundering.")
+
+
+def test_answer_for_brian_is_not_written_up_as_his():
+    assert "and do not write it up as his own decision" in _paragraph("Record it.")
 
 
 def test_answers_for_brian_are_recorded_in_the_pr():
@@ -519,7 +542,7 @@ def _private_details(text: str) -> list[str]:
 
 
 def test_generic_wording():
-    """The two public files this change touches: no machine names and no network details.
+    """The practices file and the review-loop skill: no machine names and no network details.
 
     A bare hostname with no dots and no trailing number, something like `alices-laptop`, stays
     uncaught: nothing separates it from an ordinary hyphenated word, so that remains a reviewer's job.
