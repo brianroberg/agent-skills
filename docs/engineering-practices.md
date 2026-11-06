@@ -166,8 +166,8 @@ question, see Questions.
 **Questions.** A question not about security or permissions goes to the coordinating session,
 not to Brian, with your recommended answer and the project document or precedent it rests on;
 then wait for its answer. If the coordinating session is not in your session list
-(`ListAgents`), or you cannot reach it, ask Brian directly, as you would have before. A send can
-succeed without being read, so silence is not an answer: if Brian speaks in your session while
+(`ListAgents`), or you cannot reach it, ask Brian directly, as you would have before. If two listed
+sessions carry the coordinating name, treat it as unreachable. A send can succeed without being read, so silence is not an answer: if Brian speaks in your session while
 you wait, tell him what you asked. If a status request arrives while you are still waiting, reply
 `REPORT question` with the question lines: that is your reply, not a resend.
 

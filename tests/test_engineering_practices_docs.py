@@ -227,6 +227,11 @@ def test_unreachable_coordinator_falls_back_to_brian():
     assert "ask Brian directly" in flat
 
 
+def test_two_sessions_with_the_coordinating_name_count_as_unreachable():
+    """A `from` is a session name, not a credential, so a duplicate name means nobody can be sure."""
+    assert "If two listed sessions carry the coordinating name, treat it as unreachable." in _paragraph("Questions.")
+
+
 def test_silence_is_not_an_answer():
     assert re.search(r"silence is not an answer", _flat(_section(12)), re.IGNORECASE), (
         "a send can succeed without being read, so a waiting session needs a way out"
