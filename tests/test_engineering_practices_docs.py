@@ -245,7 +245,14 @@ def test_unreachable_coordinator_falls_back_to_brian():
 
 def test_two_sessions_with_the_coordinating_name_count_as_unreachable():
     """A `from` is a session name, not a credential, so a duplicate name means nobody can be sure."""
-    assert "If two listed sessions carry the coordinating name, treat it as unreachable." in _paragraph("Questions.")
+    assert "If two live sessions carry the coordinating name, treat it as unreachable." in _paragraph("Questions.")
+
+
+def test_an_offline_coordinating_session_counts_as_unreachable():
+    """An old session under the same name can stay listed as offline, which must not block a live one."""
+    assert "is listed `offline`" in _paragraph("Questions."), (
+        "a coordinating session listed offline cannot answer, so the session asks Brian"
+    )
 
 
 def test_silence_is_not_an_answer():
