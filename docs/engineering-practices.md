@@ -148,7 +148,8 @@ The first seven lines are always there. `Question:`, `Recommended answer:` and `
 required with `question` and left out otherwise. `Unexpected prompt:` appears only after a stop
 you did not expect.
 
-- `status`: your reply to a status request, in this shape and nothing else.
+- `status`: your reply to a status request, in this shape and nothing else (`question` instead
+  while one is unanswered; see Questions).
 - `stopped`: sent unasked at a stopping point: a PR posted for Brian, work finished, or nothing
   left to do without him. Not after each commit or step.
 - `question`: a question you would otherwise have put to Brian, with `Waiting on Brian: no`.
@@ -159,14 +160,16 @@ you did not expect.
 **No secrets, no personal data and no file contents,** in any line. Describe a step in words,
 name a document rather than quoting it, and refer to a credential by its variable name. The
 real-systems line names the system or the kind of data, never a record from it. A report can be
-lost without any error, and the next status request rebuilds the picture. Do not resend one.
+lost without any error. Do not resend one. The next status request rebuilds the picture; for a
+question, see Questions.
 
 **Questions.** A question not about security or permissions goes to the coordinating session,
 not to Brian, with your recommended answer and the project document or precedent it rests on;
 then wait for its answer. If the coordinating session is not in your session list
 (`ListAgents`), or you cannot reach it, ask Brian directly, as you would have before. A send can
 succeed without being read, so silence is not an answer: if Brian speaks in your session while
-you wait, tell him what you asked.
+you wait, tell him what you asked. If a status request arrives while you are still waiting, reply
+`REPORT question` with the question lines: that is your reply, not a resend.
 
 **Security and permission questions stay with Brian, in your own session.** Send `blocked`
 first, then ask him there. A prompt freezes your session until he answers, so before a step you

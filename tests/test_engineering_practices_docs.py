@@ -233,6 +233,22 @@ def test_silence_is_not_an_answer():
     )
 
 
+def test_status_request_recovers_a_lost_question():
+    """A send can succeed and the message expire unread; the status round is the rescue."""
+    assert (
+        "If a status request arrives while you are still waiting, reply `REPORT question` "
+        "with the question lines: that is your reply, not a resend." in _paragraph("Questions.")
+    )
+
+
+def test_status_kind_points_at_the_question_exception():
+    assert "`question` instead while one is unanswered" in _kind("status")
+
+
+def test_rebuilding_the_picture_is_not_claimed_for_a_question():
+    assert "The next status request rebuilds the picture; for a question, see Questions." in _paragraph("No secrets")
+
+
 def test_security_questions_stay_with_the_user():
     flat = _flat(_section(12))
     assert re.search(r"Security and permission questions stay with Brian, in your own session", flat)
