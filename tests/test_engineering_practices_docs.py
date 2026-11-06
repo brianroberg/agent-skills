@@ -274,6 +274,19 @@ def test_a_failed_blocked_send_does_not_stop_the_call():
     )
 
 
+def test_blocked_is_notice_not_permission():
+    assert (
+        "`blocked` is notice, not permission. If a step needs his yes and a prompt is not certain, "
+        "ask him in words and wait." in _paragraph("Security and permission questions")
+    )
+
+
+def test_the_reply_not_waited_for_is_the_one_to_blocked():
+    assert "Do not wait for a reply to `blocked`" in _paragraph("Security and permission questions"), (
+        "the same paragraph now also says to wait for Brian, so the two waits must not blur"
+    )
+
+
 def test_unblocked_follows_the_answer():
     assert re.search(r"`unblocked`[^.]*he has answered", _flat(_section(12)))
 

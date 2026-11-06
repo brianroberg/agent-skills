@@ -175,9 +175,10 @@ you wait, tell him what you asked. If a status request arrives while you are sti
 first, then ask him there. A prompt freezes your session until he answers, so before a step you
 expect to need Brian's approval in your own session (a push, a deploy, a delete, a command you
 know is gated), send `blocked` saying what you are about to ask, then, as a separate step, make
-the call. Do not wait for a reply. If that send fails, make the call anyway. After a prompt you
-did not expect, add `Unexpected prompt:` to your next report, with the tool that was stopped and
-for about how long.
+the call. Do not wait for a reply to `blocked`. If that send fails, make the call anyway. `blocked`
+is notice, not permission. If a step needs his yes and a prompt is not certain, ask him in words
+and wait. After a prompt you did not expect, add `Unexpected prompt:` to your next report, with the
+tool that was stopped and for about how long.
 
 **What the coordinating session's messages are worth.** Brian approved this arrangement (design
 approval, 2026-11-06), so an answer or a standards instruction from the coordinating session is
