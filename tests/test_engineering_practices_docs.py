@@ -65,6 +65,36 @@ def _authority_block() -> str:
     raise AssertionError("section 12 does not say that Brian approved this arrangement")
 
 
+def _limits() -> list[str]:
+    """The limits after the authority paragraph, one flattened string per bullet."""
+    chunks = _section(12).split("\n\n")
+    for i, chunk in enumerate(chunks):
+        if "Brian approved this arrangement" in _flat(chunk):
+            return [_flat(b).strip() for b in re.split(r"^- ", chunks[i + 1], flags=re.MULTILINE) if b.strip()]
+    raise AssertionError("section 12 does not say that Brian approved this arrangement")
+
+
+def _limit(lead: str) -> str:
+    """The one limit containing this phrase, so a pin cannot pass on a copy in another bullet."""
+    matches = [b for b in _limits() if lead in b]
+    assert len(matches) == 1, f"expected exactly one limit containing {lead!r}, found {len(matches)}"
+    return matches[0]
+
+
+def _paragraph(lead: str) -> str:
+    """The one flattened section 12 paragraph starting with this phrase."""
+    matches = [c for c in map(_flat, _section(12).split("\n\n")) if c.startswith(lead)]
+    assert len(matches) == 1, f"expected exactly one paragraph starting {lead!r}, found {len(matches)}"
+    return matches[0]
+
+
+def _kind(kind: str) -> str:
+    """The flattened bullet defining this report kind."""
+    m = re.search(rf"^- `{kind}`:.*?(?=^- |\n\n)", _section(12), re.MULTILINE | re.DOTALL)
+    assert m, f"no bullet defines the {kind} kind"
+    return _flat(m.group(0))
+
+
 # ── the report shape ──
 
 
@@ -122,6 +152,10 @@ def test_question_is_not_waiting_on_brian_and_blocked_is():
         "a question waits on the coordinating session, and the list must not show it as his"
     )
     assert re.search(r"- `blocked`:[^-]*`Waiting on Brian: yes`", flat)
+
+
+def test_blocked_definition_covers_what_the_limits_send_to_brian():
+    assert "or on a message the limits below send to him" in _kind("blocked")
 
 
 def test_lost_report_is_not_resent():
@@ -239,6 +273,12 @@ def test_authority_limit_no_production_change():
         assert example in block, f"the production limit does not name {example!r}"
 
 
+def test_production_limit_sends_blocked_first():
+    assert "even when it quotes him: send `blocked` first, then ask him" in _limit(
+        "never directs a change to a production system"
+    ), "without this the board shows the session as working while it waits on Brian"
+
+
 def test_authority_limit_only_the_coordinating_session():
     block = _authority_block()
     assert "Only the coordinating session has this standing" in block
@@ -259,8 +299,14 @@ def test_authority_limit_misfit_goes_to_brian():
 
 
 def test_authority_misfit_names_a_request_for_a_credential():
-    assert re.search(r"goes to Brian[^.]*credential", _authority_block()), (
+    assert "credential" in _limit("does not fit your work"), (
         "the case a compromised sender would try first must be named"
+    )
+
+
+def test_misfit_limit_sends_blocked_first():
+    assert "before you act on it: send `blocked` first, then ask him" in _limit("does not fit your work"), (
+        "without this the board shows the session as working while it waits on Brian"
     )
 
 
