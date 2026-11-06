@@ -50,8 +50,8 @@ real id seen so far. Before any commit or post, grep the staged text for the nam
 and ids seen during the session. Brian's own name and the GitHub handles `brianroberg` and
 `brianroberg-agent` are fine. Exempt (Brian, 2026-10-28): professional baseball players' and
 umpires' names as published in public sources such as the MLB Stats API, and real recorded
-MLB API responses used as test fixtures. Everyone else stays covered, including Little
-League players and families.
+MLB API responses used as test fixtures. Public figures' names are exempt too (Brian,
+2026-11-02). Everyone else stays covered, including Little League players and families.
 
 ## 6. Absolute claims only with a test
 
