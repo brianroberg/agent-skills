@@ -17,6 +17,7 @@ import re
 from tests.conftest import REPO_ROOT
 
 PRACTICES = REPO_ROOT / "docs" / "engineering-practices.md"
+REVIEW_LOOP = REPO_ROOT / "skills" / "review-loop" / "SKILL.md"
 
 LABELS = (
     "REPORT <kind>",
@@ -35,6 +36,11 @@ KINDS = ("status", "stopped", "question", "blocked", "unblocked")
 def _raw() -> str:
     assert PRACTICES.exists(), f"{PRACTICES} is missing"
     return PRACTICES.read_text()
+
+
+def _review_loop_raw() -> str:
+    assert REVIEW_LOOP.exists(), f"{REVIEW_LOOP} is missing"
+    return REVIEW_LOOP.read_text()
 
 
 def _flat(text: str) -> str:
@@ -473,14 +479,34 @@ def test_practices_sentinel_is_last():
     assert _raw().rstrip().endswith("PRACTICES LOADED")
 
 
-def test_generic_wording():
-    """A public file: no machine names and no network details.
+# Shapes rather than literal names, so that this public test does not publish what it keeps out.
+PRIVATE_DETAIL_SHAPES = (
+    r"\b\d{1,3}(?:\.\d{1,3}){3}\b",  # an IP address
+    r"\b(?:[a-z0-9-]+\.)+(?:net|dev|org|io|com|local)\b",  # a domain name
+    r"https?://",  # a URL
+    r"\b[a-z]+-\d+\b",  # a machine named word-number
+)
 
-    The machine-name and service-domain checks are shapes, not literal names, so that this
-    public test does not publish the names it is keeping out.
+
+def _private_details(text: str) -> list[str]:
+    found = [m.group(0) for shape in PRIVATE_DETAIL_SHAPES for m in re.finditer(shape, text)]
+    if "tailnet" in text:
+        found.append("tailnet")
+    return found
+
+
+def test_generic_wording():
+    """The two public files this change touches: no machine names and no network details.
+
+    A bare hostname with no dots and no trailing number, something like `alices-laptop`, stays
+    uncaught: nothing separates it from an ordinary hyphenated word, so that remains a reviewer's job.
     """
-    raw = _raw()
-    for word in ("tailnet", "dm.org", "192.168.", "100."):
-        assert word not in raw, f"{word!r} must not appear in this public file"
-    for shape in (r"\bdocker-\d", r"\.net\b"):
-        assert not re.search(shape, raw), f"text matching {shape!r} must not appear in this public file"
+    for name, text in (("the practices file", _raw()), ("the review-loop skill", _review_loop_raw())):
+        assert not _private_details(text), f"{name} must not contain {_private_details(text)}"
+
+
+def test_private_detail_shapes_catch_what_they_are_for():
+    for example in ("10.0.0.5", "svc.example.com", "svc.example.net", "http://svc:8082", "box-2", "tailnet"):
+        assert _private_details(example), f"{example!r} should be caught"
+    for ordinary in ("alices-laptop", "review-loop", "cost was 100.", "2026-11-06", "cert.pem"):
+        assert not _private_details(ordinary), f"{ordinary!r} should not be caught"
