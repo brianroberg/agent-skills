@@ -14,6 +14,8 @@ Update an existing calendar event. This is a **write operation** that modifies y
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Read this before you update anything
 
 **An update blocks while a human approves it.** Every mutation goes through
@@ -103,7 +105,7 @@ inside a URL.
 ### Step 1: Find the event
 
 ```bash
-curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
     | jq '.events[] | {id, summary, start, end}'
 ```
 
@@ -111,7 +113,7 @@ Or search by keyword. `calendar_id` is **required** on `POST /search`, and the
 search terms go inside `filters`:
 
 ```bash
-curl -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -133,7 +135,7 @@ form used in Step 3.
 Use `PATCH` to change only the fields that need to change:
 
 ```bash
-resp=$(curl -sS --max-time 420 -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X PATCH "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID" \
     -H "Content-Type: application/json" \
     -d '{
@@ -162,7 +164,7 @@ The read must carry its own status: `EventDetailResponse` is
 `curl -s ... | jq ...` cannot tell "unchanged" from "not read".
 
 ```bash
-vresp=$(curl -sS --max-time 35 -w '\n%{http_code}' \
+vresp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -w '\n%{http_code}' \
     "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID")
 vrc=$?
 vcode="${vresp##*$'\n'}"
@@ -198,7 +200,7 @@ Only include fields you want to change. Omitted fields remain unchanged under
 
 **Change meeting time:**
 ```bash
-curl -sS --max-time 420 -w '\n%{http_code}' \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X PATCH "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/abc123" \
     -H "Content-Type: application/json" \
     -d '{
@@ -209,7 +211,7 @@ curl -sS --max-time 420 -w '\n%{http_code}' \
 
 **Update title and add location:**
 ```bash
-curl -sS --max-time 420 -w '\n%{http_code}' \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X PATCH "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/abc123" \
     -H "Content-Type: application/json" \
     -d '{
@@ -220,7 +222,7 @@ curl -sS --max-time 420 -w '\n%{http_code}' \
 
 **Add attendees:**
 ```bash
-curl -sS --max-time 420 -w '\n%{http_code}' \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X PATCH "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/abc123" \
     -H "Content-Type: application/json" \
     -d '{

@@ -13,12 +13,14 @@ and you want to propose times.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Usage
 
 When this skill is invoked with a timeframe, run:
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/find-free-time" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/find-free-time" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -81,7 +83,7 @@ both, and note this is a *successful* `200`: it means "no room", not "read faile
 
 **Check availability tomorrow:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -95,7 +97,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
 
 **Find 1-hour slots next week:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -109,7 +111,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
 
 **Check afternoon availability (including outside work hours):**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/find-free-time" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",

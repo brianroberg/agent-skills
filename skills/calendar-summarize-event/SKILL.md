@@ -13,6 +13,8 @@ operation that provides insights about an event.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Workflow
 
 This is a two-step process:
@@ -23,13 +25,13 @@ First, identify the event to summarize:
 
 **List upcoming events:**
 ```bash
-curl -s "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
     | jq '.events[] | {id, summary, start}'
 ```
 
 **Or search by keyword:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{"calendar_id": "robergb@dm.org", "filters": {"query": "SEARCH_TERM"}}' \
     | jq '.events[] | {id, summary, start}'
@@ -40,7 +42,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 Use the event ID to get a summary:
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/summarize" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/summarize" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -97,11 +99,11 @@ Read it with `jq -r '.data.summary'`. The requested `format` is not echoed back.
 **Brief summary of next meeting:**
 ```bash
 # Find next meeting
-curl -s "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=$(date -Iseconds)&max_results=1" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=$(date -Iseconds)&max_results=1" \
     | jq '.events[0].id'
 
 # Get brief summary
-curl -s -X POST "$CALENDAR_AGENT_URL/summarize" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/summarize" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -113,7 +115,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/summarize" \
 
 **Detailed summary with preparation notes:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/summarize" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/summarize" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",

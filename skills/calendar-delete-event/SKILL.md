@@ -14,6 +14,8 @@ Delete a calendar event. This is a **destructive write operation** that removes 
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Read this before you delete anything
 
 Three things about deletion are counter-intuitive and each one has caused a real
@@ -121,7 +123,7 @@ This is the control that would have prevented the 2026-08-07 overlapping events.
 ### Step 1: Find the event
 
 ```bash
-curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
     | jq '.events[] | {id, summary, start, end}'
 ```
 
@@ -129,7 +131,7 @@ Or search by keyword. `calendar_id` is **required** on `POST /search`, and the
 search terms go inside `filters`:
 
 ```bash
-curl -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -154,7 +156,7 @@ form used in Step 4.
 ### Step 2: Confirm the event details with the user
 
 ```bash
-curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID" \
     | jq .
 ```
 
@@ -226,7 +228,7 @@ Whenever the wrapper exits with anything other than `0`, re-read the event. The
 re-read, not the delete's own answer, is the evidence:
 
 ```bash
-vresp=$(curl -sS --max-time 35 -w '\n%{http_code}' \
+vresp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -w '\n%{http_code}' \
     "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID")
 vrc=$?
 vcode="${vresp##*$'\n'}"

@@ -50,7 +50,7 @@ NOTE = {
     for svc, var in TOKEN_VAR.items()
 }
 
-SERVICES_UNDER_TEST: tuple[str, ...] = ("EMAIL",)
+SERVICES_UNDER_TEST: tuple[str, ...] = ("EMAIL", "CALENDAR")
 
 _FENCE = re.compile(r"^[ \t]*```[^\n]*\n(.*?)^[ \t]*```", re.MULTILINE | re.DOTALL)
 _SERVICE_URL = re.compile(r"\$\{?(EMAIL|CALENDAR)_AGENT_URL\}?([^\"'\s)]*)")
@@ -216,6 +216,24 @@ def test_every_service_call_sends_its_own_token(pair):
 def test_skill_states_the_token_note(pair):
     path, service = pair
     assert NOTE[service] in path.read_text(), f"{path.parent.name}: missing the {service} token note:\n{NOTE[service]}"
+
+
+# ── /health stays headerless; agent-status says what its 200 does not show ──
+
+HEALTH_NOTE = ("`/health` answers without a token, so these two checks send none: "
+               "a 200 here shows the service is up, not that a token is accepted.")
+
+
+def test_agent_status_says_health_checks_prove_nothing_about_tokens():
+    text = (SKILLS_DIR / "agent-status" / "SKILL.md").read_text()
+    assert HEALTH_NOTE in text
+    assert all(path.startswith("/health") for _, path, _ in service_calls(text))
+
+
+def test_readme_documents_both_token_variables(readme_content):
+    for var in ("EMAIL_AGENT_TOKEN", "CALENDAR_AGENT_TOKEN"):
+        assert f"`{var}`" in readme_content
+    assert not _ARGV_AUTH.search(readme_content)
 
 
 # ── invariants over every skill ──

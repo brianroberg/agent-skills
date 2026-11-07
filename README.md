@@ -99,8 +99,29 @@ Set these environment variables to point to your agent servers:
 |----------|-------------|---------|
 | `EMAIL_AGENT_URL` | Email agent server endpoint | `http://localhost:8081` |
 | `CALENDAR_AGENT_URL` | Calendar agent server endpoint | `http://localhost:8082` |
+| `EMAIL_AGENT_TOKEN` | Bearer token for the email agent (optional) | (unset) |
+| `CALENDAR_AGENT_TOKEN` | Bearer token for the calendar agent (optional) | (unset) |
 
 Donor Management skills read their API endpoint and key from `/workspace/TOOLS.md`. Auth uses `X-API-Key` header with agent-level keys (`agent_read` or `agent_readwrite`). Base URL: `https://donor-management.fly.dev`.
+
+### Authentication
+
+When `EMAIL_AGENT_TOKEN` or `CALENDAR_AGENT_TOKEN` is set, the skills send it to that
+agent as `Authorization: Bearer <token>`, which `curl` reads from standard input:
+
+```bash
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- ...
+```
+
+`printf` is a shell builtin, so the token is never on a command line. When a variable is
+unset or empty, no `Authorization` header is sent at all. A call to the email agent sends
+only `EMAIL_AGENT_TOKEN`, and a call to the calendar agent only `CALENDAR_AGENT_TOKEN`.
+`/health` checks (as in `/agent-status`) send neither, so a 200 there shows a service is
+up, not that a token is accepted. Never put the header on a command line, and never add
+`-v`, `--trace` or `set -x` to these calls: each one prints the header.
+`tests/test_agent_token_docs.py` runs the idiom against a local stub and checks every
+skill's calls for it. How to mint a token and how to set a service's mode are in that
+service's README, "Authentication".
 
 ## Usage
 

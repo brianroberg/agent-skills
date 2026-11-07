@@ -13,12 +13,14 @@ operation for finding specific events.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Usage
 
 When this skill is invoked, run:
 
 ```bash
-resp=$(curl -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -172,7 +174,7 @@ the agent's `/openapi.json`.
 
 **Search for meetings with a person:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -183,7 +185,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Search for project meetings this month:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -198,7 +200,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Find recent standup meetings:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -209,7 +211,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Search by location:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",

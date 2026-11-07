@@ -28,13 +28,15 @@ When this skill is invoked, run both queries and present the combined results:
 
 ### Step 1: Get Calendar Briefing
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 The briefing text is at **`.data.briefing`**. `/prepare-briefing` returns an
 `LLMResponse` — `{success, data, error}` — so a filter reading `.briefing` prints
 literal `null` on a fully successful `200` and the briefing silently comes back
 empty.
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$CALENDAR_AGENT_URL/prepare-briefing" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$CALENDAR_AGENT_URL/prepare-briefing" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "briefing_type": "daily",
