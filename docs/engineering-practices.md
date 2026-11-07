@@ -145,8 +145,9 @@ you're using to communicate to workers."
 interact directly with workers except when necessary for permission prompts." Designs and plans
 for his approval, decisions and questions go to the coordinating session, which answers what he
 has settled and brings him the rest; act on his words when it relays them. Ask him in your own
-window only at a permission prompt, or for an authorization of an action with security
-implications that you decide must come from him directly.
+window only at a permission prompt, for an authorization of an action with security implications
+that you decide must come from him directly, or when the coordinating session cannot be reached
+(see Questions).
 
 ```
 REPORT <kind>

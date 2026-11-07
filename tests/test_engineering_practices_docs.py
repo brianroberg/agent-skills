@@ -283,9 +283,10 @@ def test_brian_is_in_a_workers_window_only_for_permission_prompts():
         in paragraph
     )
     assert (
-        "Ask him in your own window only at a permission prompt, or for an authorization of an action "
-        "with security implications that you decide must come from him directly." in paragraph
-    )
+        "Ask him in your own window only at a permission prompt, for an authorization of an action "
+        "with security implications that you decide must come from him directly, or when the "
+        "coordinating session cannot be reached (see Questions)." in paragraph
+    ), "the unreachable fallback is the necessary case his words allow; without it a question could wait forever"
 
 
 # ── questions and permission prompts ──
