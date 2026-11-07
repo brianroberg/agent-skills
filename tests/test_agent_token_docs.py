@@ -18,6 +18,12 @@ Two kinds of test:
 - static checks over the SKILL.md text: every non-``/health`` call carries its own
   service's idiom, each calling skill states the token note, and no call reads a body
   from stdin, runs verbose or traced, or puts an ``Authorization`` header on argv.
+
+The static checks only see what the extractor finds, so it is held to the whole text:
+fences of either kind (backticks or tildes), one ``curl`` per extracted invocation (a
+second call chained on with ``;`` or ``&& \\`` would hide behind the first one's idiom),
+no service route anywhere outside a fence (inline code in prose included), and a floor
+on the number of calls found.
 """
 
 import os
@@ -52,12 +58,15 @@ NOTE = {
 
 SERVICES_UNDER_TEST: tuple[str, ...] = ("EMAIL", "CALENDAR")
 
-_FENCE = re.compile(r"^[ \t]*```[^\n]*\n(.*?)^[ \t]*```", re.MULTILINE | re.DOTALL)
+_FENCE = re.compile(r"^[ \t]*(?P<fence>`{3,}|~{3,})[^\n]*\n(?P<body>.*?)^[ \t]*(?P=fence)",
+                    re.MULTILINE | re.DOTALL)
 _SERVICE_URL = re.compile(r"\$\{?(EMAIL|CALENDAR)_AGENT_URL\}?([^\"'\s)]*)")
+_SERVICE_ROUTE = re.compile(r"\$\{?(EMAIL|CALENDAR)_AGENT_URL\}?/")
 
 
 def _fenced_blocks(text: str) -> list[str]:
-    return _FENCE.findall(text)
+    """The body of every fenced block, opened by three or more backticks or tildes."""
+    return [m.group("body") for m in _FENCE.finditer(text)]
 
 
 def _quote_state(line: str, state: str | None) -> str | None:
@@ -138,8 +147,14 @@ def stray_service_urls(text: str) -> list[str]:
         lines = block.splitlines()
         inside = {k for i, j in _curl_spans(lines) for k in range(i, j + 1)}
         stray += [line.strip() for k, line in enumerate(lines)
-                  if k not in inside and re.search(r"\$\{?(EMAIL|CALENDAR)_AGENT_URL\}?/", line)]
+                  if k not in inside and _SERVICE_ROUTE.search(line)]
     return stray
+
+
+def prose_service_urls(text: str) -> list[str]:
+    """Lines outside every fenced block that name a service route (``$X_AGENT_URL/...``),
+    e.g. a call in inline code: the extractor reads fences only, so such a call is unchecked."""
+    return [line.strip() for line in _FENCE.sub("", text).splitlines() if _SERVICE_ROUTE.search(line)]
 
 
 def _is_health(path: str) -> bool:
@@ -247,6 +262,50 @@ def test_extractor_follows_a_quoted_multiline_body_to_the_url():
     assert [(s, p) for s, p, _ in calls] == [("EMAIL", "/search")]
     assert _VERBOSE.search(calls[0][2]), "a flag after the body must be inside the invocation"
     assert "echo done" not in calls[0][2]
+
+
+def test_extractor_reads_tilde_fences():
+    md = ('~~~bash\ncurl -s "$EMAIL_AGENT_URL/labels"\n~~~\n'
+          '````\ncurl -s "$CALENDAR_AGENT_URL/calendars"\n```\nstill inside\n````\n')
+    assert [(s, p) for s, p, _ in service_calls(md)] == [("EMAIL", "/labels"), ("CALENDAR", "/calendars")]
+
+
+def test_prose_service_urls_finds_inline_code_and_skips_fences():
+    md = ('Run `curl -s "${EMAIL_AGENT_URL}/labels"` to list them.\n'
+          'Set `$CALENDAR_AGENT_URL` first.\n'
+          '```bash\ncurl -s "$EMAIL_AGENT_URL/search"\n```\n'
+          '~~~\ncurl -s "$CALENDAR_AGENT_URL/calendars"\n~~~\n')
+    assert prose_service_urls(md) == ['Run `curl -s "${EMAIL_AGENT_URL}/labels"` to list them.']
+
+
+@pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=lambda p: p.parent.name)
+def test_no_service_url_outside_a_fence(skill_path):
+    """A call written in prose (inline code, say) is invisible to every check that reads fences."""
+    prose = prose_service_urls(skill_path.read_text())
+    assert not prose, f"{skill_path.parent.name}: service route outside a fenced block:\n" + "\n".join(prose)
+
+
+@pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=lambda p: p.parent.name)
+def test_each_service_invocation_holds_one_curl(skill_path):
+    """A second curl chained onto a call (after ``;``, ``&&``, a pipe) sits in the same
+    invocation and would pass on the first call's idiom without sending the header itself."""
+    bad = [inv for _, _, inv in service_calls(skill_path.read_text()) if len(re.findall(r"\bcurl\b", inv)) != 1]
+    assert not bad, f"{skill_path.parent.name}: more than one curl in one service invocation:\n\n" + "\n\n".join(bad)
+
+
+# 21 email and 42 calendar calls besides /health when the idiom went in. Fewer found means
+# a call was removed on purpose (lower the floor in the same change) or the extractor lost it.
+CALL_FLOOR = {"EMAIL": 21, "CALENDAR": 42}
+
+
+def test_the_extractor_still_finds_every_known_call():
+    found = {svc: 0 for svc in CALL_FLOOR}
+    for path in SKILL_PATHS:
+        for svc, route, _ in service_calls(path.read_text()):
+            if not _is_health(route):
+                found[svc] += 1
+    short = {svc: (found[svc], floor) for svc, floor in CALL_FLOOR.items() if found[svc] < floor}
+    assert not short, f"non-/health calls found vs floor: {short}"
 
 
 def test_stray_service_urls_finds_a_url_outside_any_curl_invocation():
