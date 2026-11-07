@@ -169,6 +169,12 @@ def test_blocked_definition_covers_a_step_in_another_session():
     assert "or on a step that has to run in another session (see You are a leaf)" in _kind("blocked")
 
 
+def test_blocked_names_a_permission_prompt_or_an_authorization():
+    blocked = _kind("blocked")
+    assert "on a permission prompt or an authorization you have asked him for" in blocked
+    assert "security or permission question" not in blocked, "a security question goes to the coordinating session"
+
+
 def test_unblocked_covers_a_step_with_no_prompt():
     assert "or the step went through without a prompt" in _kind("unblocked"), (
         "otherwise the board keeps showing the session as stuck"
@@ -285,10 +291,30 @@ def test_brian_is_in_a_workers_window_only_for_permission_prompts():
 # ── questions and permission prompts ──
 
 
-def test_non_security_questions_go_to_the_coordinating_session_and_wait():
-    flat = _flat(_section(12))
-    assert re.search(r"not about security or permissions[^.]*coordinating session", flat)
-    assert re.search(r"then wait for its answer", flat)
+PROMPTS_STAY = "Permission prompts, and authorizations you decide must come from Brian directly, stay with him"
+
+
+def test_questions_including_security_go_to_the_coordinating_session_and_wait():
+    """Brian, 2026-11-07: only a permission prompt or a direct authorization stays in the worker's window."""
+    paragraph = _paragraph("Questions.")
+    assert "Every question, a security question included, goes to the coordinating session, not to Brian" in (
+        paragraph
+    )
+    assert "unless it is a permission prompt or an authorization you decide must come from him directly" in (
+        paragraph
+    )
+    assert "then wait for its answer" in paragraph
+    assert "not about security or permissions" not in paragraph, "a security question no longer goes to Brian"
+
+
+def test_coordinating_session_answers_a_question_only_where_brian_has_settled_it():
+    paragraph = _paragraph("Questions.")
+    assert "That session answers only where Brian has settled the question and brings him the rest." in paragraph
+    assert (
+        'His words to the coordinating session, 2026-11-07: "This does not prohibit you from answering a '
+        "security-related question when you and I have already discussed that question or when you can "
+        'derive my answer from other things we\'ve already decided."' in paragraph
+    ), "the quote says you to the coordinating session, so it must not read as the worker's licence"
 
 
 def test_unreachable_coordinator_falls_back_to_brian():
@@ -352,10 +378,18 @@ def test_rebuilding_the_picture_is_not_claimed_for_a_question():
     assert "The next status request rebuilds the picture; for a question, see Questions." in _paragraph("No secrets")
 
 
-def test_security_questions_stay_with_the_user():
-    paragraph = _paragraph("Security and permission questions stay with Brian, in your own session")
+def test_prompts_and_direct_authorizations_stay_with_the_user():
+    paragraph = _paragraph(PROMPTS_STAY + " in your own session.")
     assert "Send `blocked` first, then ask him there." in paragraph, (
         "read from this paragraph alone, because the limits carry copies of the same words"
+    )
+
+
+def test_whether_an_authorization_must_come_from_brian_is_the_workers_call():
+    """Brian, 2026-11-07: the assistant must not override a worker that wants his own yes."""
+    assert (
+        "Whether an authorization must come from him directly is your call, and an answer from the "
+        "coordinating session does not overrule it." in _paragraph(PROMPTS_STAY)
     )
 
 
@@ -367,7 +401,7 @@ def test_blocked_goes_out_before_the_gated_call():
 
 
 def test_blocked_is_its_own_step_and_does_not_wait():
-    paragraph = _paragraph("Security and permission questions")
+    paragraph = _paragraph(PROMPTS_STAY)
     assert "then, as a separate step, make the call" in paragraph
     assert "Do not wait for a reply" in paragraph
 
@@ -381,12 +415,12 @@ def test_a_failed_blocked_send_does_not_stop_the_call():
 def test_blocked_is_notice_not_permission():
     assert (
         "`blocked` is notice, not permission. If a step needs his yes and a prompt is not certain, "
-        "ask him in words and wait." in _paragraph("Security and permission questions")
+        "ask him in words and wait." in _paragraph(PROMPTS_STAY)
     )
 
 
 def test_the_reply_not_waited_for_is_the_one_to_blocked():
-    assert "Do not wait for a reply to `blocked`" in _paragraph("Security and permission questions"), (
+    assert "Do not wait for a reply to `blocked`" in _paragraph(PROMPTS_STAY), (
         "the same paragraph now also says to wait for Brian, so the two waits must not blur"
     )
 

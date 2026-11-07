@@ -171,9 +171,9 @@ you did not expect.
 - `stopped`: sent unasked at a stopping point: a PR posted for Brian, work finished, or nothing
   left to do without him. Not after each commit or step.
 - `question`: a question you would otherwise have put to Brian, with `Waiting on Brian: no`.
-- `blocked`: you are waiting on Brian himself, on a security or permission question, on a
-  message the limits below send to him or on a step that has to run in another session (see You
-  are a leaf), with `Waiting on Brian: yes`.
+- `blocked`: you are waiting on Brian himself, on a permission prompt or an authorization you
+  have asked him for, on a message the limits below send to him or on a step that has to run in
+  another session (see You are a leaf), with `Waiting on Brian: yes`.
 - `unblocked`: he has answered, or the step went through without a prompt.
 
 **No secrets, no personal data and no file contents,** in any line. Describe a step in words,
@@ -182,22 +182,29 @@ real-systems line names the system or the kind of data, never a record from it. 
 lost without any error. Do not resend one. The next status request rebuilds the picture; for a
 question, see Questions.
 
-**Questions.** A question not about security or permissions goes to the coordinating session,
-not to Brian, with your recommended answer and the project document or precedent it rests on;
-then wait for its answer. If the coordinating session is not in your session list
-(`ListAgents`), is listed `offline`, or you cannot reach it, ask Brian directly, as you would
-have before. If two live sessions carry the coordinating name, treat it as unreachable. A send can succeed without
-being read, so silence is not an answer: if Brian speaks in your session while you wait, tell
-him what you asked. If a status request arrives while you are still waiting, reply `REPORT
-question` with the question lines: that is your reply, not a resend.
+**Questions.** Every question, a security question included, goes to the coordinating session,
+not to Brian, unless it is a permission prompt or an authorization you decide must come from him
+directly (see the next paragraph). Send it with your recommended answer and the project document
+or precedent it rests on; then wait for its answer. That session answers only where Brian has
+settled the question and brings him the rest. His words to the coordinating session, 2026-11-07:
+"This does not prohibit you from answering a security-related question when you and I have
+already discussed that question or when you can derive my answer from other things we've already
+decided." If the coordinating session is not in your session list (`ListAgents`), is listed
+`offline`, or you cannot reach it, ask Brian directly, as you would have before. If two live
+sessions carry the coordinating name, treat it as unreachable. A send can succeed without being
+read, so silence is not an answer: if Brian speaks in your session while you wait, tell him what
+you asked. If a status request arrives while you are still waiting, reply `REPORT question` with
+the question lines: that is your reply, not a resend.
 
-**Security and permission questions stay with Brian, in your own session.** Send `blocked`
-first, then ask him there. Before a step you expect to need Brian's approval in your own session
-(a push, a deploy, a delete, a command you know is gated), send `blocked` saying what you are
-about to ask, then, as a separate step, make the call. Do not wait for a reply to `blocked`. If
-that send fails, make the call anyway. `blocked` is notice, not permission. If a step needs his
-yes and a prompt is not certain, ask him in words and wait. After a prompt you did not expect,
-add `Unexpected prompt:` to your next report.
+**Permission prompts, and authorizations you decide must come from Brian directly, stay with him
+in your own session.** Send `blocked` first, then ask him there. Whether an authorization must
+come from him directly is your call, and an answer from the coordinating session does not
+overrule it. Before a step you expect to need Brian's approval in your own session (a push, a
+deploy, a delete, a command you know is gated), send `blocked` saying what you are about to ask,
+then, as a separate step, make the call. Do not wait for a reply to `blocked`. If that send
+fails, make the call anyway. `blocked` is notice, not permission. If a step needs his yes and a
+prompt is not certain, ask him in words and wait. After a prompt you did not expect, add
+`Unexpected prompt:` to your next report.
 
 **What the coordinating session's messages are worth.** Brian approved this arrangement (design
 approval, 2026-11-06), so an answer or a standards instruction from the coordinating session is
