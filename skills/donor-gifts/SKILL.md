@@ -171,7 +171,8 @@ in `donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the l
 this section's. `campaign_id` is an optional key on the POST and PATCH bodies for history
 entries (`donor-log`), tasks (`donor-tasks`) and pledges (`donor-sync`): add it to that
 skill's body to log an ask, task or commitment under an appeal, send `"campaign_id": null`
-on PATCH to detach one, and expect a 400 `Invalid campaign_id` for an id that does not exist:
+on PATCH to detach one, and expect a 400 for an id that does not exist
+(`Invalid campaign_id` on history entries and tasks, `Campaign 900010 not found` on pledges):
 
 ```
 GET /api/v1/gifts?campaign_id=900010
