@@ -14,6 +14,8 @@ Manage email drafts in Gmail. These are **write operations** that modify your dr
 
 Requires `EMAIL_AGENT_URL` environment variable to be set.
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Endpoints
 
 ### 1. Create a Draft
@@ -21,7 +23,7 @@ Requires `EMAIL_AGENT_URL` environment variable to be set.
 Create a new draft from structured fields.
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/drafts/create" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/drafts/create" \
     -H "Content-Type: application/json" \
     -d '{"to": ["recipient@example.com"], "subject": "Subject here", "body": "Email body here"}' \
     | jq .
@@ -41,7 +43,7 @@ Fields:
 List all drafts with preview information.
 
 ```bash
-curl -s "$EMAIL_AGENT_URL/drafts" | jq .
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s "$EMAIL_AGENT_URL/drafts" | jq .
 ```
 
 ### 3. Get Draft Details
@@ -49,7 +51,7 @@ curl -s "$EMAIL_AGENT_URL/drafts" | jq .
 Get the full content of a specific draft.
 
 ```bash
-curl -s "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
 ```
 
 ### 4. Update a Draft
@@ -57,7 +59,7 @@ curl -s "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
 Replace the content of an existing draft.
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE/update" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE/update" \
     -H "Content-Type: application/json" \
     -d '{"to": ["recipient@example.com"], "subject": "Updated subject", "body": "Updated body"}' \
     | jq .
@@ -68,7 +70,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE/update" \
 Permanently delete a draft.
 
 ```bash
-curl -s -X DELETE "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X DELETE "$EMAIL_AGENT_URL/drafts/DRAFT_ID_HERE" | jq .
 ```
 
 ## Decision Guide

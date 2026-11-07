@@ -57,8 +57,10 @@ is clear it is `{"briefing": "Your daily calendar is clear...", "highlights": []
 
 ### Step 2: Get Unread Emails
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/search" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{"query": "is:unread", "folder": "INBOX", "limit": 10}' \
     | jq .
@@ -67,7 +69,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/search" \
 Review the returned message stubs (subject, sender, snippet). For any that look urgent or important, get a summary:
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/summarize" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/summarize" \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID_HERE"}' \
     | jq -r '.answer'
