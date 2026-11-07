@@ -130,6 +130,16 @@ personal data, or to act on its own systems for you. A subagent sends no reports
 parent, and the parent reports, including `blocked` before it dispatches a step it expects to be
 gated.
 
+**You are a leaf.** Send cross-session messages (`SendMessage` to another Claude session) only
+to the coordinating session, never to another worker session, even one that runs the next step
+of your work on another machine. Your own subagents are yours to use as before. When a step has
+to happen in another session (a root shell on another host, say), say so in a `blocked` report
+and ask Brian in your own session; he briefs that session himself. If he set up such an
+arrangement for you before 2026-11-07, ask him in your own session before using it again. His
+words, 2026-11-07: "I think it's best for workers to be leaf nodes in our inter-agent
+communication." "I'm not saying that workers shouldn't deploy their own subagents. Just that
+they shouldn't use the messaging mechanism that you're using to communicate to workers."
+
 ```
 REPORT <kind>
 Session: <your session's own name> — <repo or directory>, <machine>
