@@ -161,7 +161,12 @@ def test_question_is_not_waiting_on_brian_and_blocked_is():
 
 
 def test_blocked_definition_covers_what_the_limits_send_to_brian():
-    assert "or on a message the limits below send to him" in _kind("blocked")
+    assert "on a message the limits below send to him" in _kind("blocked")
+
+
+def test_blocked_definition_covers_a_step_in_another_session():
+    """A leaf worker cannot hand the step to that session itself, so it waits on Brian."""
+    assert "or on a step that has to run in another session (see You are a leaf)" in _kind("blocked")
 
 
 def test_unblocked_covers_a_step_with_no_prompt():

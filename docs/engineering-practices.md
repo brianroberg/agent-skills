@@ -163,8 +163,9 @@ you did not expect.
 - `stopped`: sent unasked at a stopping point: a PR posted for Brian, work finished, or nothing
   left to do without him. Not after each commit or step.
 - `question`: a question you would otherwise have put to Brian, with `Waiting on Brian: no`.
-- `blocked`: you are waiting on Brian himself, on a security or permission question or on a
-  message the limits below send to him, with `Waiting on Brian: yes`.
+- `blocked`: you are waiting on Brian himself, on a security or permission question, on a
+  message the limits below send to him or on a step that has to run in another session (see You
+  are a leaf), with `Waiting on Brian: yes`.
 - `unblocked`: he has answered, or the step went through without a prompt.
 
 **No secrets, no personal data and no file contents,** in any line. Describe a step in words,
