@@ -42,6 +42,8 @@ else
 fi
 ```
 
+`/health` answers without a token, so these two checks send none: a 200 here shows the service is up, not that a token is accepted.
+
 ### Check Vikunja (the task system)
 
 Brian's task system is a self-hosted Vikunja instance. `$VIKUNJA_URL` is the container

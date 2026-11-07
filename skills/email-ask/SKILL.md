@@ -13,6 +13,8 @@ searches, lists, or summarizes emails without modifying anything.
 
 Requires `EMAIL_AGENT_URL` environment variable to be set to your email agent server.
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Reading a response: two checks, not one
 
 Every read below is written in the same shape — capture the response, split off the
@@ -47,7 +49,7 @@ The email agent exposes three read endpoints. Choose which to use based on the u
 Find emails matching criteria. Returns message summaries (see the field list below).
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$EMAIL_AGENT_URL/search" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$EMAIL_AGENT_URL/search" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"from_addr": "sender@example.com", "subject": "keyword", "query": "is:unread", "folder": "INBOX", "limit": 10}')
 rc=$?
@@ -95,7 +97,7 @@ An empty result is `success: true` with `messages: []` — only then say "no mat
 Get a summary of a specific email. Requires the message `id` from search results.
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/summarize" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/summarize" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID_HERE"}')
 rc=$?
@@ -114,7 +116,7 @@ fi
 Ask a specific question about an email's content.
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/ask-about" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/ask-about" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID_HERE", "question": "What action is requested?"}')
 rc=$?

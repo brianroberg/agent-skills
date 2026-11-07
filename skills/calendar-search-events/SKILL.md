@@ -13,12 +13,14 @@ operation for finding specific events.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Usage
 
 When this skill is invoked, run:
 
 ```bash
-resp=$(curl -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -166,13 +168,14 @@ deployed, rows do not carry those keys at all. **A row without
 RSVP** — check `jq '.events[0] | has("calendar_rsvp_state")'` before reading it,
 and fall back to `POST /ask-about` with the event id for RSVP questions on an
 older deployment. The authoritative per-field text is the `EventSummary` schema in
-the agent's `/openapi.json`.
+the agent's `/openapi.json`, which needs the token like every route except
+`/health`: fetch it with the token idiom, as the commands under *Usage* do.
 
 ## Examples
 
 **Search for meetings with a person:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -183,7 +186,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Search for project meetings this month:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -198,7 +201,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Find recent standup meetings:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -209,7 +212,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/search" \
 
 **Search by location:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -262,6 +265,9 @@ else
     printf '%s' "$body" | jq .
 fi
 ```
+
+A real read starts with the token idiom, as the commands above do;
+`/health` is the one route that needs none.
 
 The commands under *Usage* above are already in this form — copy one and change the
 URL, the payload and the final `jq` filter. Any remaining `curl -s ... | jq ...`

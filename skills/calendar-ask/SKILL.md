@@ -13,6 +13,8 @@ queries your schedule without modifying anything.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set to your calendar agent server.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Endpoint Selection
 
 Choose the appropriate endpoint based on the user's question:
@@ -35,7 +37,7 @@ read is indistinguishable from an empty calendar.
 ### List Events (for timeframe queries)
 
 ```bash
-resp=$(curl -sS --max-time 35 -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -w '\n%{http_code}' \
     "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO")
 rc=$?
 code="${resp##*$'\n'}"
@@ -58,7 +60,7 @@ Parameters:
 ### Search Events (for keyword/filter queries)
 
 ```bash
-resp=$(curl -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -88,7 +90,7 @@ is at **`.data.answer`**, not `.answer`. (`data` is
 fully successful call.)
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/ask-about" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/ask-about" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -112,7 +114,7 @@ fi
 `FindFreeTimeRequest.required` list) — omitting it is a `422`, not a default.
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/find-free-time" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/find-free-time" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -172,6 +174,9 @@ else
     printf '%s' "$body" | jq .
 fi
 ```
+
+A real read starts with the token idiom, as the commands above do;
+`/health` is the one route that needs none.
 
 The commands under *Usage* above are already in this form — copy one and change the
 URL, the payload and the final `jq` filter. Any remaining `curl -s ... | jq ...`

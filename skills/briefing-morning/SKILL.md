@@ -28,13 +28,15 @@ When this skill is invoked, run both queries and present the combined results:
 
 ### Step 1: Get Calendar Briefing
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 The briefing text is at **`.data.briefing`**. `/prepare-briefing` returns an
 `LLMResponse` — `{success, data, error}` — so a filter reading `.briefing` prints
 literal `null` on a fully successful `200` and the briefing silently comes back
 empty.
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$CALENDAR_AGENT_URL/prepare-briefing" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$CALENDAR_AGENT_URL/prepare-briefing" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "briefing_type": "daily",
@@ -57,8 +59,10 @@ is clear it is `{"briefing": "Your daily calendar is clear...", "highlights": []
 
 ### Step 2: Get Unread Emails
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/search" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{"query": "is:unread", "folder": "INBOX", "limit": 10}' \
     | jq .
@@ -67,7 +71,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/search" \
 Review the returned message stubs (subject, sender, snippet). For any that look urgent or important, get a summary:
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/summarize" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/summarize" \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID_HERE"}' \
     | jq -r '.answer'
@@ -165,6 +169,9 @@ else
     printf '%s' "$body" | jq .
 fi
 ```
+
+A real read starts with the token idiom, as the commands above do;
+`/health` is the one route that needs none.
 
 The commands under *Usage* above are already in this form — copy one and change the
 URL, the payload and the final `jq` filter. Any remaining `curl -s ... | jq ...`

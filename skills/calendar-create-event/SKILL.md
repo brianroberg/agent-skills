@@ -14,6 +14,8 @@ Create a new calendar event. This is a **write operation** that modifies your ca
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Read this before you create anything
 
 **A creation blocks while a human approves it.** Every mutation goes through
@@ -54,6 +56,7 @@ body's `success`:
 | Status | Outcome | What to do next |
 |--------|---------|-----------------|
 | `200` + `success: true` | **succeeded** | Report the event id from `.event.id` |
+| `401` | **failed** — missing or wrong token, refused before the operator gate, nothing outstanding | Check `CALENDAR_AGENT_TOKEN`; do not retry until it is fixed |
 | `403` | **failed** — the operator rejected it, or policy blocked it | Do not retry; tell the user it was rejected |
 | `404` | **failed** — no such calendar | Check the calendar id |
 | `422` | **failed** — malformed request. Body is a FastAPI validation error, not the envelope | Fix the payload |
@@ -99,7 +102,7 @@ segments must be URL-encoded, so `robergb@dm.org` becomes `robergb%40dm.org`
 inside a URL.
 
 ```bash
-resp=$(curl -sS --max-time 420 -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X POST "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events" \
     -H "Content-Type: application/json" \
     -d '{
@@ -133,7 +136,7 @@ empty and when the read returned `502`. Those are opposite answers: "none presen
 invites a replacement event, "could not read" forbids one. Capture the status:
 
 ```bash
-vresp=$(curl -sS --max-time 35 -w '\n%{http_code}' \
+vresp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -w '\n%{http_code}' \
     "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO")
 vrc=$?
 vcode="${vresp##*$'\n'}"
@@ -180,7 +183,7 @@ Examples:
 
 **Simple 1-hour meeting:**
 ```bash
-curl -sS --max-time 420 -w '\n%{http_code}' \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X POST "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events" \
     -H "Content-Type: application/json" \
     -d '{
@@ -192,7 +195,7 @@ curl -sS --max-time 420 -w '\n%{http_code}' \
 
 **Meeting with attendees:**
 ```bash
-curl -sS --max-time 420 -w '\n%{http_code}' \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 420 -w '\n%{http_code}' \
     -X POST "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events" \
     -H "Content-Type: application/json" \
     -d '{

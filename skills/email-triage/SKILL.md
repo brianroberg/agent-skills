@@ -14,6 +14,8 @@ Interactively triage unread emails by classifying them and applying bulk actions
 
 Requires `EMAIL_AGENT_URL` environment variable to be set.
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Workflow
 
 ### Step 1: Fetch Unread Emails
@@ -23,7 +25,7 @@ status **and** the body's `success` flag — see *Reading a response* at the end
 file for why one check is not enough.
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$EMAIL_AGENT_URL/search" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$EMAIL_AGENT_URL/search" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"query": "is:unread", "folder": "INBOX", "limit": 25}')
 rc=$?
@@ -50,7 +52,7 @@ form) and `from_name` (the display name) — there is no field named from — pl
 **If `/batch-summarize` is available** (preferred):
 
 ```bash
-resp=$(curl -sS --max-time 300 -X POST "$EMAIL_AGENT_URL/batch-summarize" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 300 -X POST "$EMAIL_AGENT_URL/batch-summarize" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"message_ids": ["id1", "id2", "id3"], "summary_style": "triage"}')
 rc=$?
@@ -72,7 +74,7 @@ batch — check the per-message `success` too.
 **Fallback** - call `/summarize` for each email individually:
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/summarize" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/summarize" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID"}')
 rc=$?
@@ -109,7 +111,7 @@ Analyze each email and assign to ONE category:
 **If classification is unclear**, use `/ask-about` to get more details:
 
 ```bash
-resp=$(curl -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/ask-about" -w '\n%{http_code}' \
+resp=$(printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -sS --max-time 120 -X POST "$EMAIL_AGENT_URL/ask-about" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{"message_id": "MESSAGE_ID", "question": "Is there a specific action requested or deadline mentioned?"}')
 rc=$?
@@ -171,7 +173,7 @@ Use AskUserQuestion to confirm:
 **If `/bulk-actions` is available** (preferred):
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/bulk-actions" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/bulk-actions" \
     -H "Content-Type: application/json" \
     -d '{
       "actions": [
@@ -187,7 +189,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/bulk-actions" \
 
 For mark read:
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/mark-read" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/mark-read" \
     -H "Content-Type: application/json" \
     -d '{"email_id": "EMAIL_ID"}' \
     | jq .
@@ -195,7 +197,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/mark-read" \
 
 For archive:
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/archive" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/archive" \
     -H "Content-Type: application/json" \
     -d '{"email_id": "EMAIL_ID"}' \
     | jq .
@@ -203,7 +205,7 @@ curl -s -X POST "$EMAIL_AGENT_URL/archive" \
 
 For label:
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/apply-label" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/apply-label" \
     -H "Content-Type: application/json" \
     -d '{"email_id": "EMAIL_ID", "label_name": "IMPORTANT"}' \
     | jq .

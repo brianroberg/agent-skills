@@ -13,12 +13,14 @@ operation that provides insights without modifying your calendar.
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Usage
 
 When this skill is invoked, run:
 
 ```bash
-resp=$(curl -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/analyze-schedule" -w '\n%{http_code}' \
+resp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 60 -X POST "$CALENDAR_AGENT_URL/analyze-schedule" -w '\n%{http_code}' \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -59,7 +61,7 @@ fi
 
 **Get overview for this week:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -72,7 +74,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
 
 **Analyze workload for the month:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -85,7 +87,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
 
 **Find scheduling conflicts:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -98,7 +100,7 @@ curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
 
 **Identify recurring patterns:**
 ```bash
-curl -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s -X POST "$CALENDAR_AGENT_URL/analyze-schedule" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -169,6 +171,9 @@ else
     printf '%s' "$body" | jq .
 fi
 ```
+
+A real read starts with the token idiom, as the commands above do;
+`/health` is the one route that needs none.
 
 The commands under *Usage* above are already in this form — copy one and change the
 URL, the payload and the final `jq` filter. Any remaining `curl -s ... | jq ...`

@@ -14,6 +14,8 @@ Delete a calendar event. This is a **destructive write operation** that removes 
 
 Requires `CALENDAR_AGENT_URL` environment variable to be set.
 
+**Token.** When `CALENDAR_AGENT_TOKEN` is set, every call to `$CALENDAR_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Read this before you delete anything
 
 Three things about deletion are counter-intuitive and each one has caused a real
@@ -73,6 +75,7 @@ described to the user as a failure.
 | Status | Meaning |
 |--------|---------|
 | `200` | Deleted, and confirmed gone by calendar-agent's own re-read |
+| `401` | Missing or wrong token. Refused before the operator gate, so nothing was deleted and nothing is outstanding. Check `CALENDAR_AGENT_TOKEN`; **do not retry** until it is fixed |
 | `403` | Operator rejected it, or policy blocked it. **Do not retry** — tell the user |
 | `404` | No such event or calendar; nothing was deleted (check the id before assuming success) |
 | `422` | Malformed request. Body is a FastAPI validation error, not the `{success, outcome}` envelope |
@@ -121,7 +124,7 @@ This is the control that would have prevented the 2026-08-07 overlapping events.
 ### Step 1: Find the event
 
 ```bash
-curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events?time_min=START_ISO&time_max=END_ISO" \
     | jq '.events[] | {id, summary, start, end}'
 ```
 
@@ -129,7 +132,7 @@ Or search by keyword. `calendar_id` is **required** on `POST /search`, and the
 search terms go inside `filters`:
 
 ```bash
-curl -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 -X POST "$CALENDAR_AGENT_URL/search" \
     -H "Content-Type: application/json" \
     -d '{
         "calendar_id": "robergb@dm.org",
@@ -154,7 +157,7 @@ form used in Step 4.
 ### Step 2: Confirm the event details with the user
 
 ```bash
-curl -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID" \
+printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -s --max-time 35 "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID" \
     | jq .
 ```
 
@@ -203,7 +206,7 @@ parseable JSON is demoted to unknown, because it proves nothing.
 |------|---------|-----------------|
 | `0` | **succeeded** — calendar-agent re-read the event and verified it is gone | Report the deletion done |
 | `2` | **usage / config error** — missing `event_id`, or `CALENDAR_AGENT_URL` unset. Nothing was sent | Fix the invocation and run it again |
-| `3` | **failed** — definitively not deleted; nothing is outstanding | Read the printed `HTTP <code>` and the message: `403` operator rejected or policy blocked — **do not retry**, tell the user; `404` no such event or calendar — check the id; `422` malformed request — correct it and send again |
+| `3` | **failed** — definitively not deleted; nothing is outstanding | Read the printed `HTTP <code>` and the message: `401` missing or wrong token (`Missing or invalid bearer token`) — check `CALENDAR_AGENT_TOKEN` and do not retry until it is fixed; `403` operator rejected or policy blocked — **do not retry**, tell the user; `404` no such event or calendar — check the id; `422` malformed request — correct it and send again |
 | `4` | **UNKNOWN** — the outcome was not established; the delete may still complete after a late operator approval. Also what a curl transport timeout or connection failure maps to | **Do NOT retry and do NOT issue a compensating create.** Re-read the event (Step 4) before doing anything else, and re-read again later if it is still present |
 | `5` | **not_attempted** — the envelope said `not_attempted`: never sent, nothing changed | Treat as not done; re-run once whatever blocked it has resolved |
 
@@ -226,7 +229,7 @@ Whenever the wrapper exits with anything other than `0`, re-read the event. The
 re-read, not the delete's own answer, is the evidence:
 
 ```bash
-vresp=$(curl -sS --max-time 35 -w '\n%{http_code}' \
+vresp=$(printf '%s' "${CALENDAR_AGENT_TOKEN:+Authorization: Bearer $CALENDAR_AGENT_TOKEN}" | curl -H @- -sS --max-time 35 -w '\n%{http_code}' \
     "$CALENDAR_AGENT_URL/calendars/robergb%40dm.org/events/EVENT_ID")
 vrc=$?
 vcode="${vresp##*$'\n'}"

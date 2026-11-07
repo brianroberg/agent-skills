@@ -14,12 +14,14 @@ Mark an email as read. This is a **write operation** that modifies your inbox.
 
 Requires `EMAIL_AGENT_URL` environment variable to be set.
 
+**Token.** When `EMAIL_AGENT_TOKEN` is set, every call to `$EMAIL_AGENT_URL` below except `/health` sends it as `Authorization: Bearer <token>`, which `curl` reads from standard input (`-H @-`), so the token is never on a command line. When it is unset or empty, no `Authorization` header is sent. Do not add `-v`, `--trace` or `set -x` to these calls: each one prints the header.
+
 ## Usage
 
 When this skill is invoked with an email ID, run:
 
 ```bash
-curl -s -X POST "$EMAIL_AGENT_URL/mark-read" \
+printf '%s' "${EMAIL_AGENT_TOKEN:+Authorization: Bearer $EMAIL_AGENT_TOKEN}" | curl -H @- -s -X POST "$EMAIL_AGENT_URL/mark-read" \
     -H "Content-Type: application/json" \
     -d '{"email_id": "EMAIL_ID_HERE"}' \
     | jq .
