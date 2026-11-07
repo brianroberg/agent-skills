@@ -247,6 +247,17 @@ def test_workers_send_cross_session_messages_only_to_the_coordinating_session():
     )
 
 
+def test_a_step_in_another_session_goes_through_the_coordinating_session():
+    """Brian, 2026-11-07 18:31: he talks to workers directly only at permission prompts."""
+    paragraph = _paragraph("You are a leaf.")
+    assert (
+        "say so to the coordinating session in a `blocked` report; Brian decides how it runs, "
+        "and his answer comes back through the coordinating session." in paragraph
+    )
+    assert "before 2026-11-07, ask the coordinating session before using it again." in paragraph
+    assert "he briefs that session himself" not in paragraph, "the worker no longer asks him in its own window"
+
+
 # ── questions and permission prompts ──
 
 
