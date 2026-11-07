@@ -146,8 +146,8 @@ no date parameter, so a figure as of a past date is not available from it) and t
   `distinct_contacts_asked` (people on `is_challenge` entries, each once) and
   `distinct_contacts_all`.
 - `commitments` — pledges carrying it: `count`, `active_count`, `monthly_equivalent`,
-  `active_monthly_equivalent` (amount ÷ frequency months, summed; the active pair counts
-  pledges still in force on `as_of`).
+  `active_monthly_equivalent` (amount ÷ frequency months, rounded to the cent per pledge,
+  then summed; the active pair counts pledges still in force on `as_of`).
 - `gifts` — gift splits carrying it: `split_count`, `total`.
 
 A gift gets its label when it is created: `POST /api/v1/gifts` (under *Recording Manual
