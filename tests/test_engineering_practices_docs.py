@@ -258,6 +258,30 @@ def test_a_step_in_another_session_goes_through_the_coordinating_session():
     assert "he briefs that session himself" not in paragraph, "the worker no longer asks him in its own window"
 
 
+BRIAN_ONLY_FOR_PROMPTS = "Brian is in your window only for permission prompts."
+
+
+def test_brian_is_in_a_workers_window_only_for_permission_prompts():
+    """Brian, 2026-11-07 18:31; the paragraph follows the leaf rule, ahead of the report shape."""
+    raw = _section(12)
+    assert f"**{BRIAN_ONLY_FOR_PROMPTS}**" in raw
+    assert raw.find("**You are a leaf.**") < raw.find(f"**{BRIAN_ONLY_FOR_PROMPTS}**") < raw.find("```")
+    paragraph = _paragraph(BRIAN_ONLY_FOR_PROMPTS)
+    assert (
+        'His words, 2026-11-07: "I don\'t want to interact directly with workers except when necessary '
+        'for permission prompts."' in paragraph
+    )
+    assert (
+        "Designs and plans for his approval, decisions and questions go to the coordinating session, "
+        "which answers what he has settled and brings him the rest; act on his words when it relays them."
+        in paragraph
+    )
+    assert (
+        "Ask him in your own window only at a permission prompt, or for an authorization of an action "
+        "with security implications that you decide must come from him directly." in paragraph
+    )
+
+
 # ── questions and permission prompts ──
 
 

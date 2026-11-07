@@ -141,6 +141,13 @@ workers to be leaf nodes in our inter-agent communication." "I'm not saying that
 shouldn't deploy their own subagents. Just that they shouldn't use the messaging mechanism that
 you're using to communicate to workers."
 
+**Brian is in your window only for permission prompts.** His words, 2026-11-07: "I don't want to
+interact directly with workers except when necessary for permission prompts." Designs and plans
+for his approval, decisions and questions go to the coordinating session, which answers what he
+has settled and brings him the rest; act on his words when it relays them. Ask him in your own
+window only at a permission prompt, or for an authorization of an action with security
+implications that you decide must come from him directly.
+
 ```
 REPORT <kind>
 Session: <your session's own name> — <repo or directory>, <machine>
