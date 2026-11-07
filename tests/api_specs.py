@@ -56,12 +56,13 @@ DONOR_ENDPOINTS = {
     "GET /api/v1/pledges/frequencies": {"description": "List pledge frequencies", "domain": "donor"},
     "POST /api/v1/pledges/{id}/deactivate": {"description": "Deactivate pledge", "domain": "donor"},
     # Campaigns — brianroberg/sr-assistant#42 (merged 2026-09-17). TntConnect's appeal:
-    # a label gifts, pledges, history entries and tasks can carry.
+    # a label gifts, pledges, history entries and tasks can carry. The update verb is
+    # PATCH since sr-assistant#19 (2026-10-22); its PUT alias is in EXCLUDED_ENDPOINTS.
     "GET /api/v1/campaigns": {"description": "List campaigns (?is_active=true|false)", "domain": "donor"},
     "GET /api/v1/campaigns/{id}": {"description": "Get campaign detail", "domain": "donor"},
     "GET /api/v1/campaigns/{id}/summary": {"description": "Campaign totals: asks, commitments, gifts", "domain": "donor"},
     "POST /api/v1/campaigns": {"description": "Create campaign (201)", "domain": "donor"},
-    "PUT /api/v1/campaigns/{id}": {"description": "Update campaign (omitted keys untouched)", "domain": "donor"},
+    "PATCH /api/v1/campaigns/{id}": {"description": "Update campaign (omitted keys untouched)", "domain": "donor"},
     "DELETE /api/v1/campaigns/{id}": {"description": "Delete campaign (204; 409 if anything references it)", "domain": "donor"},
     # Groups
     "GET /api/v1/groups": {"description": "List groups", "domain": "donor"},
@@ -109,4 +110,8 @@ EXCLUDED_ENDPOINTS = {
     "GET /sync/status": "Unversioned alias of GET /api/v1/sync/status",
     "POST /sync/trigger": "Unversioned alias of POST /api/v1/sync/trigger",
     "POST /sync/pending/{item_id}/resolve": "Unversioned alias of POST /api/v1/sync/pending/{id}/resolve",
+    # Deprecated aliases — the same handler as the PATCH route, kept upstream for old callers
+    # (sr-assistant#19). Skills document PATCH. When upstream retires the alias, the sync
+    # test's stale-exclusion check fails and this entry goes.
+    "PUT /api/v1/campaigns/{campaign_id}": "Deprecated alias of PATCH /api/v1/campaigns/{id} (sr-assistant#19)",
 }
