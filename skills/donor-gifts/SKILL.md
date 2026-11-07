@@ -153,9 +153,10 @@ parameter, so a figure as of a past date is not available from it) and three obj
 A gift gets its label when it is created: `POST /api/v1/gifts` (under *Recording Manual
 Gifts*) takes a `splits` array, each entry `{"campaign_id": 900010, "amount": 500.00}`
 (a split may also carry `promise_id`, applying that same split to a pledge; the two keys
-go together on one split when an appeal gift is also a pledge gift). `PUT /api/v1/gifts/{id}` has no
-`splits` field, so a gift recorded without one stays unattributed short of deleting and
-re-creating it; when Brian asks for a gift "under" an appeal, send the split in the POST.
+go together on one split when an appeal gift is also a pledge gift). The gift update,
+`PATCH /api/v1/gifts/{id}`, has no `splits` field, so a gift recorded without one stays
+unattributed short of deleting and re-creating it; when Brian asks for a gift "under" an
+appeal, send the split in the POST.
 
 Attribution changes how the pledge standing reads the gift (TntConnect's rule, in the
 API's commitment-status service): a campaign-linked gift counts toward a pledge whose
@@ -167,10 +168,10 @@ means it as an appeal gift, and say so when the donor has a short-period pledge.
 Each list endpoint that carries the label filters by it (`900010` is a placeholder, not a
 real campaign). The history, task and pledge reads and writes themselves are documented
 in `donor-log`, `donor-tasks` and `donor-sync` without the campaign label; the label is
-this section's. `campaign_id` is an optional key on the POST and PUT bodies for history
+this section's. `campaign_id` is an optional key on the POST and PATCH bodies for history
 entries (`donor-log`), tasks (`donor-tasks`) and pledges (`donor-sync`): add it to that
 skill's body to log an ask, task or commitment under an appeal, send `"campaign_id": null`
-on PUT to detach one, and expect a 400 `Invalid campaign_id` for an id that does not exist:
+on PATCH to detach one, and expect a 400 `Invalid campaign_id` for an id that does not exist:
 
 ```
 GET /api/v1/gifts?campaign_id=900010
@@ -234,10 +235,10 @@ still references it the API refuses with 409; its `detail` names each kind of re
 prose (history entries, pledges, tasks, gift splits) with what can be done about it, and
 the attributions are not nulled. A second 409, "still referenced by rows written after the
 reference check", means a reference landed mid-delete: retry once those rows are
-reassigned. Pledges, history entries and tasks can be moved off it
-with their own PUT (`campaign_id`); a gift split cannot be re-pointed through the API (the
-409 says so), so a gift under the campaign stays there short of deleting and re-creating
-the gift, which *Deleting Gifts* rules out for a synced one. To retire an appeal that has
+reassigned. Pledges, history entries and tasks can be moved off it with their own PATCH
+(`campaign_id`; the 409's hint names the `PUT` alias, which works too); a gift split cannot
+be re-pointed through the API (the 409 says so), so a gift under the campaign stays there
+short of deleting and re-creating the gift, which *Deleting Gifts* rules out for a synced one. To retire an appeal that has
 activity under it, set `is_active: false` instead.
 
 ## Recording Manual Gifts
