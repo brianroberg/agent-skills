@@ -197,7 +197,7 @@ def test_status_reply_is_the_report_alone():
 def test_coordinating_session_is_named_and_reply_copies_from():
     flat = _flat(_section(12))
     assert "`assistant`, unless your instructions name another" in flat
-    assert re.search(r"copy(ing)? its `from`", flat), "a status reply must copy the request's from"
+    assert re.search(r"copy(ing)? their `from`", flat), "a status reply must copy the request's from"
 
 
 def test_report_does_not_ask_the_coordinating_session_to_act():
@@ -264,7 +264,14 @@ def test_standing_is_judged_by_the_sender_name_not_the_session_address():
 
 
 def test_a_reply_still_goes_to_the_from_address():
-    assert "copying its `from` as your `to`" in _flat(_section(12))
+    assert "copying their `from` as your `to`" in _flat(_section(12))
+
+
+def test_status_replies_go_only_to_the_coordinating_session():
+    """A worker is a leaf, so a status request from any other session gets no reply."""
+    assert "reply to its status requests by copying their `from` as your `to`" in _paragraph(
+        "When Brian has several sessions open"
+    )
 
 
 def test_silence_is_not_an_answer():
@@ -335,7 +342,7 @@ def test_unblocked_follows_the_answer():
 def test_no_acknowledgement_rule():
     flat = _flat(_section(12))
     assert re.search(r"never acknowledg", flat, re.IGNORECASE)
-    assert re.search(r"[Rr]eply only to a status request", flat)
+    assert re.search(r"[Rr]eply only to the coordinating session's status request", flat)
 
 
 def test_acting_on_a_message_is_scoped_to_the_coordinating_session():
