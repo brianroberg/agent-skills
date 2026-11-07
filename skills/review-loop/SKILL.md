@@ -16,22 +16,33 @@ reviewers there tend to miss.
 | The diff changes… | Depth |
 |---|---|
 | Docs, comments, tests, prose only | **No pipeline.** Read the diff yourself once, carefully, for contradictions with the rules it describes and for unbacked absolute claims. Label `reviewed:none` and say in the PR why. |
-| Contained code, not in a daily-use failure path | **Single pass**: `/code-review high <target>`, run once, on Opus or Fable (not Sonnet; Brian, 2026-09-09). |
-| Failure behaviour, error mapping, or data writes in a service Brian uses daily | **Fable pipeline**: `/code-review high <target>` with finders and verifiers. |
+| Contained code, not in a daily-use failure path | **Single pass**: `/code-review high <target>`, run once, on Opus (not Sonnet; Brian, 2026-09-09). |
+| Failure behaviour, error mapping, or data writes in a service Brian uses daily, in a work project | **Fable pipeline**: `/code-review high <target>` with finders and verifiers. Send the `question` report below first. |
+| Personal side project, any depth | **Opus**, single pass or pipeline as the diff calls for, even where the row above would call for Fable. Docs or tests only still means no pipeline. |
+
+Which repos are personal is on a list the coordinating session holds; for your repo, if you have
+not been told, count it as work.
 
 Put the level **first**: `/code-review high <target>`. A level after the target is not parsed
 and the skill silently reuses the last level (that is how one review ran at `xhigh` by
 accident). One pipeline per batch when several small PRs touch the same code.
 
-**State the projected cost in one line before starting a pipeline**, so Brian can decline:
-a Fable pipeline has measured 1–3M tokens (an Opus pipeline of the same shape can exceed
-that); a single-agent `/code-review` is roughly 100–150k at `medium`, and one measured
-`high` single pass on Opus was about 186k. The agent cannot read the plan
-meter; saying the number out loud is the only budget control.
+**State the projected cost in one line before starting a pipeline:** a Fable pipeline has
+measured 1–3M tokens (an Opus pipeline of the same shape can exceed that); a single-agent
+`/code-review` is roughly 100–150k at `medium`, and one measured `high` single pass on Opus was
+about 186k. For an Opus review the line is information Brian can veto by reading, and nothing
+waits on it.
 
-**The reviewer ladder is Fable, then Opus.** Fable is the default; Opus is the substitute
-when Fable is unavailable. Never silently downgrade: if the intended tier did not run, say so
-in the review comment and label the tier that actually ran.
+**The reviewer ladder is Fable, then Opus.** An Opus review of any size, single pass or pipeline,
+needs no approval from Brian. A worker session does not hold the plan's usage figure, so it does
+not make the Fable decision: when a diff calls for a Fable pipeline, send a `question` report to
+the coordinating session (`docs/engineering-practices.md` §12), with the projected cost in the
+question. That session holds the week's Fable figure and decides, and brings Brian in when a
+required pipeline does not fit. If no coordinating session is reachable, state the cost and ask
+Brian. The middle rung, Opus with Fable as advisor, gets a Fable look without the cost of a
+pipeline and is the coordinating session's call too. Opus is the substitute when a required Fable
+review is unavailable. Never silently downgrade: if the intended tier did not run, say so in the
+review comment and label the tier that actually ran.
 
 ## 2. Run the review
 
