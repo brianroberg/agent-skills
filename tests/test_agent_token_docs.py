@@ -371,7 +371,19 @@ HEALTH_NOTE = ("`/health` answers without a token, so these two checks send none
 def test_agent_status_says_health_checks_prove_nothing_about_tokens():
     text = (SKILLS_DIR / "agent-status" / "SKILL.md").read_text()
     assert HEALTH_NOTE in text
-    assert all(path.startswith("/health") for _, path, _ in service_calls(text))
+    calls = service_calls(text)
+    assert len(calls) == 2, f"expected the two /health checks, found {len(calls)}"
+    assert all(path.startswith("/health") for _, path, _ in calls)
+
+
+@pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=lambda p: p.parent.name)
+def test_health_calls_send_no_token(skill_path):
+    """The README says `/health` checks send neither token: the route is exempt in every
+    mode, so a token there proves nothing. No idiom and no `-H @-` on any `/health` call, in
+    every skill, agent-status included (it has no other call, so the per-call test never sees it)."""
+    bad = [inv for _, path, inv in service_calls(skill_path.read_text())
+           if _is_health(path) and (re.search(r"-H\s*@-", inv) or "_AGENT_TOKEN" in inv)]
+    assert not bad, f"{skill_path.parent.name}: a /health call sends the token idiom:\n\n" + "\n\n".join(bad)
 
 
 # ── pointers that would lead an agent to a call without the header ──
