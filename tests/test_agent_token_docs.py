@@ -315,6 +315,24 @@ def test_agent_status_says_health_checks_prove_nothing_about_tokens():
     assert all(path.startswith("/health") for _, path, _ in service_calls(text))
 
 
+# ── pointers that would lead an agent to a call without the header ──
+
+
+def _flat(text: str) -> str:
+    """Whitespace collapsed, so a pinned sentence may wrap anywhere in the Markdown."""
+    return " ".join(text.split())
+
+
+OPENAPI_NOTE = ("the agent's `/openapi.json`, which needs the token like every route except `/health`: "
+                "fetch it with the token idiom, as the commands under *Usage* do.")
+
+
+def test_search_skill_says_openapi_needs_the_token():
+    """The skill sends the agent to its `/openapi.json` for field definitions; that route is checked too."""
+    text = (SKILLS_DIR / "calendar-search-events" / "SKILL.md").read_text()
+    assert OPENAPI_NOTE in _flat(text)
+
+
 def test_readme_documents_both_token_variables(readme_content):
     for var in ("EMAIL_AGENT_TOKEN", "CALENDAR_AGENT_TOKEN"):
         assert f"`{var}`" in readme_content

@@ -168,7 +168,8 @@ deployed, rows do not carry those keys at all. **A row without
 RSVP** — check `jq '.events[0] | has("calendar_rsvp_state")'` before reading it,
 and fall back to `POST /ask-about` with the event id for RSVP questions on an
 older deployment. The authoritative per-field text is the `EventSummary` schema in
-the agent's `/openapi.json`.
+the agent's `/openapi.json`, which needs the token like every route except
+`/health`: fetch it with the token idiom, as the commands under *Usage* do.
 
 ## Examples
 
