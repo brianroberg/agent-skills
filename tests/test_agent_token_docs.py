@@ -333,6 +333,29 @@ def test_search_skill_says_openapi_needs_the_token():
     assert OPENAPI_NOTE in _flat(text)
 
 
+HEALTH_TEMPLATE_NOTE = ("A real read starts with the token idiom, as the commands above do; "
+                        "`/health` is the one route that needs none.")
+
+
+@pytest.mark.parametrize("skill_path", [p for p in SKILL_PATHS if p.parent.name != "agent-status"],
+                         ids=lambda p: p.parent.name)
+def test_a_health_example_says_a_real_read_sends_the_token(skill_path):
+    """A headerless `/health` block shown as the template for a read ("copy one and change the
+    URL") must say that a real read starts with the idiom, or an adapted copy drops the header."""
+    text = skill_path.read_text()
+    fences = list(_FENCE.finditer(text))
+    missing = []
+    for k, fence in enumerate(fences):
+        if not any(_is_health(p) for _, p, _ in service_calls(fence.group(0))):
+            continue
+        after = text[fence.end() : fences[k + 1].start() if k + 1 < len(fences) else len(text)]
+        if HEALTH_TEMPLATE_NOTE not in _flat(after):
+            missing.append(fence.group(0))
+    assert not missing, (
+        f"{skill_path.parent.name}: a /health example is not followed by:\n{HEALTH_TEMPLATE_NOTE}\n\n" + "\n\n".join(missing)
+    )
+
+
 def test_readme_documents_both_token_variables(readme_content):
     for var in ("EMAIL_AGENT_TOKEN", "CALENDAR_AGENT_TOKEN"):
         assert f"`{var}`" in readme_content

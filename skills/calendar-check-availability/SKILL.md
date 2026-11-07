@@ -181,6 +181,9 @@ else
 fi
 ```
 
+A real read starts with the token idiom, as the commands above do;
+`/health` is the one route that needs none.
+
 The commands under *Usage* above are already in this form — copy one and change the
 URL, the payload and the final `jq` filter. Any remaining `curl -s ... | jq ...`
 snippet in this file illustrates request shape only; do not run it as the real read.
