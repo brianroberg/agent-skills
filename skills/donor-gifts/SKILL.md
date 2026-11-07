@@ -222,8 +222,8 @@ Body: { "is_active": false }
 PATCH is the update verb (sr-assistant#19). A `PUT` to the same path is a deprecated alias
 of the same handler, here and on the gift, history, task and pledge update routes, so the
 `PUT` routes shown in *Updating Gifts*, `donor-log`, `donor-tasks` and `donor-sync` still work.
-An omitted key is untouched, and an explicit null for
-`begin_date`, `end_date` or `goal` clears it. A null `name` or `is_active` is a 422.
+An omitted key is untouched, and an explicit null for `description`, `begin_date`,
+`end_date` or `goal` clears it. A null `name` or `is_active` is a 422.
 
 ```
 DELETE https://donor-management.fly.dev/api/v1/campaigns/{id}
