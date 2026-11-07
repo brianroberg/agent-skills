@@ -57,6 +57,7 @@ body's `success`:
 | Status | Outcome | What to do next |
 |--------|---------|-----------------|
 | `200` + `success: true` | **succeeded** | Report the change, echoing the fields from `.event` |
+| `401` | **failed** — missing or wrong token, refused before the operator gate, nothing outstanding | Check `CALENDAR_AGENT_TOKEN`; do not retry until it is fixed |
 | `403` | **failed** — the operator rejected it, or policy blocked it | Do not retry; tell the user it was rejected |
 | `404` | **failed** — no such event or calendar | Check the ids |
 | `422` | **failed** — malformed request. Body is a FastAPI validation error, not the envelope | Fix the payload |

@@ -356,6 +356,30 @@ def test_a_health_example_says_a_real_read_sends_the_token(skill_path):
     )
 
 
+# ── a 401 on a write is a definite failure with nothing outstanding ──
+# calendar-agent refuses an unauthenticated request before validation and before the
+# proxy's operator-approval wait (its README, "Authentication"), so nothing is pending.
+
+WRITE_401_ROW = ("| `401` | **failed** — missing or wrong token, refused before the operator gate, "
+                 "nothing outstanding | Check `CALENDAR_AGENT_TOKEN`; do not retry until it is fixed |")
+DELETE_401_ROW = ("| `401` | Missing or wrong token. Refused before the operator gate, so nothing was deleted "
+                  "and nothing is outstanding. Check `CALENDAR_AGENT_TOKEN`; **do not retry** until it is fixed |")
+
+
+@pytest.mark.parametrize("skill", ["calendar-create-event", "calendar-update-event"])
+def test_write_skill_status_table_has_a_401_row(skill):
+    lines = (SKILLS_DIR / skill / "SKILL.md").read_text().splitlines()
+    assert WRITE_401_ROW in lines, f"{skill}: the status table has no 401 row:\n{WRITE_401_ROW}"
+
+
+def test_delete_skill_names_401_in_its_status_table_and_exit_3():
+    lines = (SKILLS_DIR / "calendar-delete-event" / "SKILL.md").read_text().splitlines()
+    assert DELETE_401_ROW in lines, f"the HTTP status table has no 401 row:\n{DELETE_401_ROW}"
+    exit_3 = [line for line in lines if re.match(r"^\|\s*`3`\s*\|", line)]
+    assert len(exit_3) == 1
+    assert "`401`" in exit_3[0] and "`CALENDAR_AGENT_TOKEN`" in exit_3[0], exit_3[0]
+
+
 def test_readme_documents_both_token_variables(readme_content):
     for var in ("EMAIL_AGENT_TOKEN", "CALENDAR_AGENT_TOKEN"):
         assert f"`{var}`" in readme_content

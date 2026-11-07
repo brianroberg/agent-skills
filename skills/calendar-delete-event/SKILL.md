@@ -75,6 +75,7 @@ described to the user as a failure.
 | Status | Meaning |
 |--------|---------|
 | `200` | Deleted, and confirmed gone by calendar-agent's own re-read |
+| `401` | Missing or wrong token. Refused before the operator gate, so nothing was deleted and nothing is outstanding. Check `CALENDAR_AGENT_TOKEN`; **do not retry** until it is fixed |
 | `403` | Operator rejected it, or policy blocked it. **Do not retry** — tell the user |
 | `404` | No such event or calendar; nothing was deleted (check the id before assuming success) |
 | `422` | Malformed request. Body is a FastAPI validation error, not the `{success, outcome}` envelope |
@@ -205,7 +206,7 @@ parseable JSON is demoted to unknown, because it proves nothing.
 |------|---------|-----------------|
 | `0` | **succeeded** — calendar-agent re-read the event and verified it is gone | Report the deletion done |
 | `2` | **usage / config error** — missing `event_id`, or `CALENDAR_AGENT_URL` unset. Nothing was sent | Fix the invocation and run it again |
-| `3` | **failed** — definitively not deleted; nothing is outstanding | Read the printed `HTTP <code>` and the message: `403` operator rejected or policy blocked — **do not retry**, tell the user; `404` no such event or calendar — check the id; `422` malformed request — correct it and send again |
+| `3` | **failed** — definitively not deleted; nothing is outstanding | Read the printed `HTTP <code>` and the message: `401` missing or wrong token (`Missing or invalid bearer token`) — check `CALENDAR_AGENT_TOKEN` and do not retry until it is fixed; `403` operator rejected or policy blocked — **do not retry**, tell the user; `404` no such event or calendar — check the id; `422` malformed request — correct it and send again |
 | `4` | **UNKNOWN** — the outcome was not established; the delete may still complete after a late operator approval. Also what a curl transport timeout or connection failure maps to | **Do NOT retry and do NOT issue a compensating create.** Re-read the event (Step 4) before doing anything else, and re-read again later if it is still present |
 | `5` | **not_attempted** — the envelope said `not_attempted`: never sent, nothing changed | Treat as not done; re-run once whatever blocked it has resolved |
 
