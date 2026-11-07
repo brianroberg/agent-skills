@@ -456,9 +456,13 @@ def test_no_session_message_is_brians_approval_including_the_coordinating_one():
 
 
 def test_the_approval_rule_leaves_relayed_answers_alone():
-    assert "A relay of his answer to an ordinary question is still an answer to act on." in _paragraph(
+    """The test is the step, not how the question was framed: a relayed yes cannot pass as an answer."""
+    assert "A relay of his answer on anything that does not need his yes is still an answer to act on." in _paragraph(
         "No laundering."
-    ), "otherwise the approval rule would stop the relaying this arrangement exists for"
+    )
+    assert "ordinary question" not in _paragraph("No laundering."), (
+        "the word let a relayed yes for a step needing his approval be argued past the rule"
+    )
 
 
 def test_laundering_runs_in_both_directions():
