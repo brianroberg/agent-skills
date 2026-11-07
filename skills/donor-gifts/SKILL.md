@@ -208,17 +208,20 @@ Body: {
 
 `name` is required (1–100 characters); `description`, `begin_date`, `end_date` and `goal`
 are optional and `is_active` defaults to true. `goal`, when sent, is a positive amount (`0` is
-a 422), checked to two decimal places when sent as a string; to remove a goal on PUT send
+a 422), checked to two decimal places when sent as a string; to remove a goal on PATCH send
 `null`, not `0`. Returns 201 with the full campaign. Both writes run the begin/end
 ordering check and answer 422 when it fails.
 
 ```
-PUT https://donor-management.fly.dev/api/v1/campaigns/{id}
+PATCH https://donor-management.fly.dev/api/v1/campaigns/{id}
 Header: X-API-Key: [from TOOLS.md]
 Body: { "is_active": false }
 ```
 
-PUT has PATCH semantics: an omitted key is untouched, and an explicit null for
+PATCH is the update verb (sr-assistant#19). A `PUT` to the same path is a deprecated alias
+of the same handler, here and on the gift, history, task and pledge update routes, so the
+`PUT` routes shown in *Updating Gifts*, `donor-log`, `donor-tasks` and `donor-sync` still work.
+An omitted key is untouched, and an explicit null for
 `begin_date`, `end_date` or `goal` clears it. A null `name` or `is_active` is a 422.
 
 ```
@@ -342,6 +345,6 @@ POST   /api/v1/gifts                — create manual gift
 PUT    /api/v1/gifts/{id}           — update gift (memo, payment_method only)
 DELETE /api/v1/gifts/{id}           — delete gift
 POST   /api/v1/campaigns            — create campaign (201)
-PUT    /api/v1/campaigns/{id}       — update campaign (omitted keys untouched)
+PATCH  /api/v1/campaigns/{id}       — update campaign (omitted keys untouched)
 DELETE /api/v1/campaigns/{id}       — delete campaign (204; 409 while anything references it)
 ```
