@@ -231,6 +231,22 @@ def test_parent_sends_blocked_for_a_subagents_gated_step():
     )
 
 
+# ── workers are leaves ──
+
+
+def test_workers_send_cross_session_messages_only_to_the_coordinating_session():
+    """Brian, 2026-11-07: workers are leaf nodes in inter-agent communication."""
+    assert "**You are a leaf.**" in _section(12), "the rule's bold lead is how the other rules point at it"
+    paragraph = _paragraph("You are a leaf.")
+    assert (
+        "Send cross-session messages (`SendMessage` to another Claude session) only to the "
+        "coordinating session, never to another worker session" in paragraph
+    )
+    assert "Your own subagents are yours to use as before." in paragraph, (
+        "the rule limits messages between sessions, not a worker's own subagents"
+    )
+
+
 # ── questions and permission prompts ──
 
 
