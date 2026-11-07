@@ -60,30 +60,86 @@ def _fenced_blocks(text: str) -> list[str]:
     return _FENCE.findall(text)
 
 
+def _quote_state(line: str, state: str | None) -> str | None:
+    """The shell quote still open at the end of ``line`` (``'``, ``"`` or None).
+
+    Enough of bash for these blocks: backslash escapes outside single quotes, and a ``#``
+    that starts a word outside quotes begins a comment.
+    """
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if state is None:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == "#" and (i == 0 or line[i - 1].isspace()):
+                break
+            if ch in "'\"":
+                state = ch
+        elif state == "'":
+            if ch == "'":
+                state = None
+        else:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == '"':
+                state = None
+        i += 1
+    return state
+
+
+def _curl_spans(lines: list[str]) -> list[tuple[int, int]]:
+    """(first, last) line index of each ``curl`` invocation in a block's lines.
+
+    An invocation is the line holding ``curl`` plus the lines it continues onto: by a
+    trailing backslash, or because a quoted argument (a multi-line ``-d '{...}'`` body)
+    is still open.
+    """
+    spans = []
+    i = 0
+    while i < len(lines):
+        if not re.search(r"\bcurl\b", lines[i]):
+            i += 1
+            continue
+        j = i
+        state = _quote_state(lines[i], None)
+        while j + 1 < len(lines) and (state is not None or lines[j].rstrip().endswith("\\")):
+            j += 1
+            state = _quote_state(lines[j], state)
+        spans.append((i, j))
+        i = j + 1
+    return spans
+
+
 def service_calls(text: str) -> list[tuple[str, str, str]]:
     """Every ``curl`` invocation in a fenced block that names a service URL variable.
 
-    An invocation is the line holding ``curl`` plus its backslash-continued lines. Returns
-    ``(service, path, invocation)``; ``path`` is the text after the variable up to a quote,
-    a space or ``)``.
+    Returns ``(service, path, invocation)``; ``path`` is the text after the variable up to
+    a quote, a space or ``)``.
     """
     calls = []
     for block in _fenced_blocks(text):
         lines = block.splitlines()
-        i = 0
-        while i < len(lines):
-            if not re.search(r"\bcurl\b", lines[i]):
-                i += 1
-                continue
-            j = i
-            while lines[j].rstrip().endswith("\\") and j + 1 < len(lines):
-                j += 1
+        for i, j in _curl_spans(lines):
             invocation = "\n".join(lines[i : j + 1])
             m = _SERVICE_URL.search(invocation)
             if m:
                 calls.append((m.group(1), m.group(2), invocation))
-            i = j + 1
     return calls
+
+
+def stray_service_urls(text: str) -> list[str]:
+    """Fenced-block lines that name a service route (``$X_AGENT_URL/...``) outside any curl
+    invocation, e.g. a URL kept in a variable: a call made that way escapes the checks."""
+    stray = []
+    for block in _fenced_blocks(text):
+        lines = block.splitlines()
+        inside = {k for i, j in _curl_spans(lines) for k in range(i, j + 1)}
+        stray += [line.strip() for k, line in enumerate(lines)
+                  if k not in inside and re.search(r"\$\{?(EMAIL|CALENDAR)_AGENT_URL\}?/", line)]
+    return stray
 
 
 def _is_health(path: str) -> bool:
@@ -175,6 +231,35 @@ def test_extractor_finds_brace_form_continuations_and_health():
           'curl -s "$CALENDAR_AGENT_URL/health"\n```\n')
     calls = service_calls(md)
     assert [(s, p) for s, p, _ in calls] == [("EMAIL", "/search"), ("CALENDAR", "/calendars"), ("CALENDAR", "/health")]
+
+
+
+def test_extractor_follows_a_quoted_multiline_body_to_the_url():
+    """A body in single quotes spans lines with no backslash; the call goes on after it."""
+    md = ("```bash\n"
+          "resp=$(curl -sS -X POST -d '{\n"
+          '    "q": "x"\n'
+          "  }' \\\n"
+          '    -v "$EMAIL_AGENT_URL/search")\n'
+          "echo done\n"
+          "```\n")
+    calls = service_calls(md)
+    assert [(s, p) for s, p, _ in calls] == [("EMAIL", "/search")]
+    assert _VERBOSE.search(calls[0][2]), "a flag after the body must be inside the invocation"
+    assert "echo done" not in calls[0][2]
+
+
+def test_stray_service_urls_finds_a_url_outside_any_curl_invocation():
+    md = ('```bash\nURL="$CALENDAR_AGENT_URL/calendars"\ncurl -s "$URL"\n'
+          'echo "Calendar ($CALENDAR_AGENT_URL): OK"\ncurl -s "$EMAIL_AGENT_URL/labels"\n```\n')
+    assert stray_service_urls(md) == ['URL="$CALENDAR_AGENT_URL/calendars"']
+
+
+@pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=lambda p: p.parent.name)
+def test_every_service_url_is_inside_a_curl_invocation(skill_path):
+    """A route reached any other way (a URL in a variable, say) escapes every check above."""
+    stray = stray_service_urls(skill_path.read_text())
+    assert not stray, f"{skill_path.parent.name}: service URL outside a curl invocation:\n" + "\n".join(stray)
 
 
 @pytest.mark.parametrize("service", ["EMAIL", "CALENDAR"])
