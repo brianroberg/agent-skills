@@ -149,6 +149,16 @@ window only at a permission prompt, for an authorization of an action with secur
 that you decide must come from him directly, or when the coordinating session cannot be reached
 (see Questions).
 
+**Asking Brian to run a command is a last resort.** Having him run a command and paste its output
+back costs his attention more than almost anything else you could ask of him. Use it only when no
+other route to the information exists. First try the tool's own source or documentation, a local
+reproduction, parsing that tolerates what you have not seen, or a script that shows him the raw
+output at its own dry run and stops there. When none of them works, ask the coordinating session as
+a `question`, saying why no other route works. His words, 2026-11-10, after pasting a host's output
+for a worker: "A worker having me run commands and paste them back is not a good pattern." And, the
+same afternoon, that it is not a ban: "count it as an expensive option for gaining information that
+it should resort to only if there's no other option. (This would apply to other workers too.)"
+
 ```
 REPORT <kind>
 Session: <your session's own name> — <repo or directory>, <machine>

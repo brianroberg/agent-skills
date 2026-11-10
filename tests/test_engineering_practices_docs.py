@@ -265,6 +265,27 @@ def test_a_step_in_another_session_goes_through_the_coordinating_session():
 
 
 BRIAN_ONLY_FOR_PROMPTS = "Brian is in your window only for permission prompts."
+LAST_RESORT = "Asking Brian to run a command is a last resort."
+
+
+def test_asking_brian_to_run_a_command_is_a_last_resort_not_a_ban():
+    """Brian, 2026-11-10 16:48 and 16:52: an expensive last resort for every worker, not a ban."""
+    raw = _section(12)
+    assert f"**{LAST_RESORT}**" in raw
+    assert raw.find(f"**{BRIAN_ONLY_FOR_PROMPTS}**") < raw.find(f"**{LAST_RESORT}**") < raw.find("```"), (
+        "it sits with the rules about Brian's attention, ahead of the report shape"
+    )
+    paragraph = _flat(_paragraph(LAST_RESORT))
+    assert "run a command and paste its output back" in paragraph
+    assert "Use it only when no other route to the information exists" in paragraph
+    for route in ("the tool's own source or documentation", "a local reproduction", "its own dry run"):
+        assert route in paragraph, f"the routes to try first must name {route!r}"
+    assert "ask the coordinating session as a `question`, saying why no other route works" in paragraph
+    assert (
+        '"count it as an expensive option for gaining information that it should resort to only if '
+        "there's no other option. (This would apply to other workers too.)\"" in paragraph
+    ), "his own words carry the rule"
+    assert "never ask" not in paragraph.lower(), "he ruled it is not an absolute ban"
 
 
 def test_brian_is_in_a_workers_window_only_for_permission_prompts():
