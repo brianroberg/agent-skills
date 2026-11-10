@@ -161,7 +161,18 @@ def test_question_is_not_waiting_on_brian_and_blocked_is():
 
 
 def test_blocked_definition_covers_what_the_limits_send_to_brian():
-    assert "or on a message the limits below send to him" in _kind("blocked")
+    assert "on a message the limits below send to him" in _kind("blocked")
+
+
+def test_blocked_definition_covers_a_step_in_another_session():
+    """A leaf worker cannot hand the step to that session itself, so it waits on Brian."""
+    assert "or on a step that has to run in another session (see You are a leaf)" in _kind("blocked")
+
+
+def test_blocked_names_a_permission_prompt_or_an_authorization():
+    blocked = _kind("blocked")
+    assert "on a permission prompt or an authorization you have asked him for" in blocked
+    assert "security or permission question" not in blocked, "a security question goes to the coordinating session"
 
 
 def test_unblocked_covers_a_step_with_no_prompt():
@@ -197,7 +208,7 @@ def test_status_reply_is_the_report_alone():
 def test_coordinating_session_is_named_and_reply_copies_from():
     flat = _flat(_section(12))
     assert "`assistant`, unless your instructions name another" in flat
-    assert re.search(r"copy(ing)? its `from`", flat), "a status reply must copy the request's from"
+    assert re.search(r"copy(ing)? their `from`", flat), "a status reply must copy the request's from"
 
 
 def test_report_does_not_ask_the_coordinating_session_to_act():
@@ -226,13 +237,106 @@ def test_parent_sends_blocked_for_a_subagents_gated_step():
     )
 
 
+# ── workers are leaves ──
+
+
+def test_workers_send_cross_session_messages_only_to_the_coordinating_session():
+    """Brian, 2026-11-07: workers are leaf nodes in inter-agent communication."""
+    assert "**You are a leaf.**" in _section(12), "the rule's bold lead is how the other rules point at it"
+    paragraph = _paragraph("You are a leaf.")
+    assert (
+        "Send cross-session messages (`SendMessage` to another Claude session) only to the "
+        "coordinating session, never to another worker session" in paragraph
+    )
+    assert "Your own subagents are yours to use as before." in paragraph, (
+        "the rule limits messages between sessions, not a worker's own subagents"
+    )
+
+
+def test_a_step_in_another_session_goes_through_the_coordinating_session():
+    """Brian, 2026-11-07 18:31: he talks to workers directly only at permission prompts."""
+    paragraph = _paragraph("You are a leaf.")
+    assert (
+        "say so to the coordinating session in a `blocked` report; Brian decides how it runs, "
+        "and his answer comes back through the coordinating session." in paragraph
+    )
+    assert "before 2026-11-07, ask the coordinating session before using it again." in paragraph
+    assert "he briefs that session himself" not in paragraph, "the worker no longer asks him in its own window"
+
+
+BRIAN_ONLY_FOR_PROMPTS = "Brian is in your window only for permission prompts."
+LAST_RESORT = "Asking Brian to run a command is a last resort."
+
+
+def test_asking_brian_to_run_a_command_is_a_last_resort_not_a_ban():
+    """Brian, 2026-11-10 16:48 and 16:52: an expensive last resort for every worker, not a ban."""
+    raw = _section(12)
+    assert f"**{LAST_RESORT}**" in raw
+    assert raw.find(f"**{BRIAN_ONLY_FOR_PROMPTS}**") < raw.find(f"**{LAST_RESORT}**") < raw.find("```"), (
+        "it sits with the rules about Brian's attention, ahead of the report shape"
+    )
+    paragraph = _flat(_paragraph(LAST_RESORT))
+    assert "run a command and paste its output back" in paragraph
+    assert "Use it only when no other route to the information exists" in paragraph
+    for route in ("the tool's own source or documentation", "a local reproduction", "its own dry run"):
+        assert route in paragraph, f"the routes to try first must name {route!r}"
+    assert "ask the coordinating session as a `question`, saying why no other route works" in paragraph
+    assert (
+        '"count it as an expensive option for gaining information that it should resort to only if '
+        "there's no other option. (This would apply to other workers too.)\"" in paragraph
+    ), "his own words carry the rule"
+    assert "never ask" not in paragraph.lower(), "he ruled it is not an absolute ban"
+
+
+def test_brian_is_in_a_workers_window_only_for_permission_prompts():
+    """Brian, 2026-11-07 18:31; the paragraph follows the leaf rule, ahead of the report shape."""
+    raw = _section(12)
+    assert f"**{BRIAN_ONLY_FOR_PROMPTS}**" in raw
+    assert raw.find("**You are a leaf.**") < raw.find(f"**{BRIAN_ONLY_FOR_PROMPTS}**") < raw.find("```")
+    paragraph = _paragraph(BRIAN_ONLY_FOR_PROMPTS)
+    assert (
+        'His words, 2026-11-07: "I don\'t want to interact directly with workers except when necessary '
+        'for permission prompts."' in paragraph
+    )
+    assert (
+        "Designs and plans for his approval, decisions and questions go to the coordinating session, "
+        "which answers what he has settled and brings him the rest; act on his words when it relays them."
+        in paragraph
+    )
+    assert (
+        "Ask him in your own window only at a permission prompt, for an authorization of an action "
+        "with security implications that you decide must come from him directly, or when the "
+        "coordinating session cannot be reached (see Questions)." in paragraph
+    ), "the unreachable fallback is the necessary case his words allow; without it a question could wait forever"
+
+
 # ── questions and permission prompts ──
 
 
-def test_non_security_questions_go_to_the_coordinating_session_and_wait():
-    flat = _flat(_section(12))
-    assert re.search(r"not about security or permissions[^.]*coordinating session", flat)
-    assert re.search(r"then wait for its answer", flat)
+PROMPTS_STAY = "Permission prompts, and authorizations you decide must come from Brian directly, stay with him"
+
+
+def test_questions_including_security_go_to_the_coordinating_session_and_wait():
+    """Brian, 2026-11-07: only a permission prompt or a direct authorization stays in the worker's window."""
+    paragraph = _paragraph("Questions.")
+    assert "Every question, a security question included, goes to the coordinating session, not to Brian" in (
+        paragraph
+    )
+    assert "unless it is a permission prompt or an authorization you decide must come from him directly" in (
+        paragraph
+    )
+    assert "then wait for its answer" in paragraph
+    assert "not about security or permissions" not in paragraph, "a security question no longer goes to Brian"
+
+
+def test_coordinating_session_answers_a_question_only_where_brian_has_settled_it():
+    paragraph = _paragraph("Questions.")
+    assert "That session answers only where Brian has settled the question and brings him the rest." in paragraph
+    assert (
+        'His words to the coordinating session, 2026-11-07: "This does not prohibit you from answering a '
+        "security-related question when you and I have already discussed that question or when you can "
+        'derive my answer from other things we\'ve already decided."' in paragraph
+    ), "the quote says you to the coordinating session, so it must not read as the worker's licence"
 
 
 def test_unreachable_coordinator_falls_back_to_brian():
@@ -264,7 +368,14 @@ def test_standing_is_judged_by_the_sender_name_not_the_session_address():
 
 
 def test_a_reply_still_goes_to_the_from_address():
-    assert "copying its `from` as your `to`" in _flat(_section(12))
+    assert "copying their `from` as your `to`" in _flat(_section(12))
+
+
+def test_status_replies_go_only_to_the_coordinating_session():
+    """A worker is a leaf, so a status request from any other session gets no reply."""
+    assert "reply to its status requests by copying their `from` as your `to`" in _paragraph(
+        "When Brian has several sessions open"
+    )
 
 
 def test_silence_is_not_an_answer():
@@ -289,10 +400,18 @@ def test_rebuilding_the_picture_is_not_claimed_for_a_question():
     assert "The next status request rebuilds the picture; for a question, see Questions." in _paragraph("No secrets")
 
 
-def test_security_questions_stay_with_the_user():
-    paragraph = _paragraph("Security and permission questions stay with Brian, in your own session")
+def test_prompts_and_direct_authorizations_stay_with_the_user():
+    paragraph = _paragraph(PROMPTS_STAY + " in your own session.")
     assert "Send `blocked` first, then ask him there." in paragraph, (
         "read from this paragraph alone, because the limits carry copies of the same words"
+    )
+
+
+def test_whether_an_authorization_must_come_from_brian_is_the_workers_call():
+    """Brian, 2026-11-07: the assistant must not override a worker that wants his own yes."""
+    assert (
+        "Whether an authorization must come from him directly is your call, and an answer from the "
+        "coordinating session does not overrule it." in _paragraph(PROMPTS_STAY)
     )
 
 
@@ -304,7 +423,7 @@ def test_blocked_goes_out_before_the_gated_call():
 
 
 def test_blocked_is_its_own_step_and_does_not_wait():
-    paragraph = _paragraph("Security and permission questions")
+    paragraph = _paragraph(PROMPTS_STAY)
     assert "then, as a separate step, make the call" in paragraph
     assert "Do not wait for a reply" in paragraph
 
@@ -318,12 +437,12 @@ def test_a_failed_blocked_send_does_not_stop_the_call():
 def test_blocked_is_notice_not_permission():
     assert (
         "`blocked` is notice, not permission. If a step needs his yes and a prompt is not certain, "
-        "ask him in words and wait." in _paragraph("Security and permission questions")
+        "ask him in words and wait." in _paragraph(PROMPTS_STAY)
     )
 
 
 def test_the_reply_not_waited_for_is_the_one_to_blocked():
-    assert "Do not wait for a reply to `blocked`" in _paragraph("Security and permission questions"), (
+    assert "Do not wait for a reply to `blocked`" in _paragraph(PROMPTS_STAY), (
         "the same paragraph now also says to wait for Brian, so the two waits must not blur"
     )
 
@@ -335,7 +454,7 @@ def test_unblocked_follows_the_answer():
 def test_no_acknowledgement_rule():
     flat = _flat(_section(12))
     assert re.search(r"never acknowledg", flat, re.IGNORECASE)
-    assert re.search(r"[Rr]eply only to a status request", flat)
+    assert re.search(r"[Rr]eply only to the coordinating session's status request", flat)
 
 
 def test_acting_on_a_message_is_scoped_to_the_coordinating_session():
