@@ -203,8 +203,9 @@ already discussed that question or when you can derive my answer from other thin
 decided." If the coordinating session is not in your session list (`ListAgents`), is listed
 `offline`, or you cannot reach it, ask Brian directly, as you would have before. A session listed
 `offline` never counts as a second one. If two live sessions carry the coordinating name, treat it
-as unreachable, with one exception: if one was last active more than a day before the other,
-ignore the old one and send to the recent one (Brian, 2026-11-24: "the more recent `assistant` is
+as unreachable, with one exception: if your session list shows when each was last active, and one
+was last active more than a day before the other, ignore the old one and send to the recent one by
+its `[ref]` (Brian, 2026-11-24: "the more recent `assistant` is
 the right one. When there's a time disparity like that, ignore the old one."). The exception
 does not apply when the recent one has never sent you a status request or an answer and the old
 one has: a newcomer beside the coordinating session you know stays unreachable. A send can succeed

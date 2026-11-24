@@ -358,13 +358,22 @@ def test_a_stale_duplicate_of_the_coordinating_name_is_ignored():
     """Brian, 2026-11-24: a 10-day-old duplicate held a report back from the one active 30 minutes before."""
     paragraph = _paragraph("Questions.")
     assert (
-        "if one was last active more than a day before the other, ignore the old one and send to the recent one"
+        "one was last active more than a day before the other, ignore the old one and send to the recent one"
         in paragraph
     )
     assert (
         "\"the more recent `assistant` is the right one. When there's a time disparity like that, ignore the old "
         "one.\"" in paragraph
     ), "his words, so the exception reads as his ruling and not a worker's convenience"
+
+
+def test_the_stale_duplicate_exception_needs_times_the_session_list_shows():
+    """Without a last-activity time a worker would guess, or read a long-running coordinator as the old one."""
+    paragraph = _paragraph("Questions.")
+    assert "if your session list shows when each was last active, and one was last active more than a day" in (
+        paragraph
+    )
+    assert "send to the recent one by its `[ref]`" in paragraph, "a bare name is ambiguous with two rows"
 
 
 def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
