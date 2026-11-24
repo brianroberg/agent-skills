@@ -376,6 +376,11 @@ def test_the_stale_duplicate_exception_needs_times_the_session_list_shows():
     assert "send to the recent one by its `[ref]`" in paragraph, "a bare name is ambiguous with two rows"
 
 
+def test_the_duplicate_name_rule_covers_reports_too():
+    """On 2026-11-24 it was a report, not a question, that a stale duplicate held back."""
+    assert "The duplicate rule and its exception decide where a report goes too." in _paragraph("Questions.")
+
+
 def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
     """An impostor is always the newer session, so recency alone must not hand it the coordinator's standing."""
     assert (

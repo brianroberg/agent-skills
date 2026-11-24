@@ -207,8 +207,9 @@ was last active more than a day before the other, ignore the old one and send to
 its `[ref]` (Brian, 2026-11-24: "the more recent `assistant` is
 the right one. When there's a time disparity like that, ignore the old one."). The exception
 does not apply when the recent one has never sent you a status request or an answer and the old
-one has: a newcomer beside the coordinating session you know stays unreachable. A session listed `offline` is not a second coordinating session. A send can succeed
-without being
+one has: a newcomer beside the coordinating session you know stays unreachable. A session listed
+`offline` is not a second coordinating session. The duplicate rule and its exception decide where
+a report goes too. A send can succeed without being
 read, so silence is not an answer: if Brian speaks in your session while you wait, tell him what
 you asked. If a status request arrives while you are still waiting, reply `REPORT question` with
 the question lines: that is your reply, not a resend.
