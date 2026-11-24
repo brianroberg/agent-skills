@@ -349,17 +349,17 @@ def test_unreachable_coordinator_falls_back_to_brian():
 
 def test_two_sessions_with_the_coordinating_name_count_as_unreachable():
     """A `from-name` is a session name, not a credential, so a duplicate name means nobody can be sure."""
-    assert (
-        "If two live sessions carry the coordinating name and both were active recently, treat it as unreachable."
-        in _paragraph("Questions.")
-    )
+    assert "If two live sessions carry the coordinating name, treat it as unreachable, with one exception:" in (
+        _paragraph("Questions.")
+    ), "unreachable is the default, so times that fit no clause (hours apart, both days old) stay unreachable"
 
 
 def test_a_stale_duplicate_of_the_coordinating_name_is_ignored():
     """Brian, 2026-11-24: a 10-day-old duplicate held a report back from the one active 30 minutes before."""
     paragraph = _paragraph("Questions.")
     assert (
-        "If one was last active days before the other, ignore the old one and send to the recent one" in paragraph
+        "if one was last active more than a day before the other, ignore the old one and send to the recent one"
+        in paragraph
     )
     assert (
         "\"the more recent `assistant` is the right one. When there's a time disparity like that, ignore the old "
