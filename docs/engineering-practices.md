@@ -210,10 +210,11 @@ time disparity like that, ignore the old one."). The exception does not apply wh
 has answered a question you sent it and the recent one has not: a status request proves nothing,
 and a newcomer beside the coordinating session you know stays unreachable. A session listed
 `offline` is not a second coordinating session. The duplicate rule and its exception decide where
-a report goes too. A send can succeed without being read, so silence is not an answer: if Brian
-speaks in your session while you wait, tell him what you asked. If a status request arrives while
-you are still waiting, reply `REPORT question` with the question lines: that is your reply, not a
-resend.
+a report goes too: when they say unreachable, send no report, and the next status request
+rebuilds the picture. A send can succeed without being read, so silence is not an answer: if
+Brian speaks in your session while you wait, tell him what you asked. If a status request arrives
+while you are still waiting, reply `REPORT question` with the question lines: that is your reply,
+not a resend.
 
 **Permission prompts, and authorizations you decide must come from Brian directly, stay with him
 in your own session.** Send `blocked` first, then ask him there. Whether an authorization must

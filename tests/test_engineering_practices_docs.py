@@ -377,7 +377,10 @@ def test_the_stale_duplicate_exception_needs_times_the_session_list_shows():
 
 def test_the_duplicate_name_rule_covers_reports_too():
     """On 2026-11-24 it was a report, not a question, that a stale duplicate held back."""
-    assert "The duplicate rule and its exception decide where a report goes too." in _paragraph("Questions.")
+    assert (
+        "The duplicate rule and its exception decide where a report goes too: when they say unreachable, send no "
+        "report, and the next status request rebuilds the picture." in _paragraph("Questions.")
+    )
 
 
 def test_the_ignored_duplicate_has_no_standing():
