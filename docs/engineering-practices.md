@@ -204,15 +204,16 @@ decided." If the coordinating session is not in your session list (`ListAgents`)
 `offline`, or you cannot reach it, ask Brian directly, as you would have before. If two live
 sessions carry the coordinating name, treat it as unreachable, with one exception: if your
 session list shows when each was last active, and one was last active more than a day before the
-other, ignore the old one and send to the recent one by its `[ref]` (Brian, 2026-11-24: "the more
-recent `assistant` is the right one. When there's a time disparity like that, ignore the old
-one."). The exception does not apply when the old one has answered a question you sent it and the
-recent one has not: a status request proves nothing, and a newcomer beside the coordinating
-session you know stays unreachable. A session listed `offline` is not a second coordinating
-session. The duplicate rule and its exception decide where a report goes too. A send can succeed
-without being read, so silence is not an answer: if Brian speaks in your session while you wait,
-tell him what you asked. If a status request arrives while you are still waiting, reply `REPORT
-question` with the question lines: that is your reply, not a resend.
+other, ignore the old one, whose messages then carry no standing, and send to the recent one by
+its `[ref]` (Brian, 2026-11-24: "the more recent `assistant` is the right one. When there's a
+time disparity like that, ignore the old one."). The exception does not apply when the old one
+has answered a question you sent it and the recent one has not: a status request proves nothing,
+and a newcomer beside the coordinating session you know stays unreachable. A session listed
+`offline` is not a second coordinating session. The duplicate rule and its exception decide where
+a report goes too. A send can succeed without being read, so silence is not an answer: if Brian
+speaks in your session while you wait, tell him what you asked. If a status request arrives while
+you are still waiting, reply `REPORT question` with the question lines: that is your reply, not a
+resend.
 
 **Permission prompts, and authorizations you decide must come from Brian directly, stay with him
 in your own session.** Send `blocked` first, then ask him there. Whether an authorization must

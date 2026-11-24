@@ -358,8 +358,7 @@ def test_a_stale_duplicate_of_the_coordinating_name_is_ignored():
     """Brian, 2026-11-24: a 10-day-old duplicate held a report back from the one active 30 minutes before."""
     paragraph = _paragraph("Questions.")
     assert (
-        "one was last active more than a day before the other, ignore the old one and send to the recent one"
-        in paragraph
+        "one was last active more than a day before the other, ignore the old one" in paragraph
     )
     assert (
         "\"the more recent `assistant` is the right one. When there's a time disparity like that, ignore the old "
@@ -379,6 +378,13 @@ def test_the_stale_duplicate_exception_needs_times_the_session_list_shows():
 def test_the_duplicate_name_rule_covers_reports_too():
     """On 2026-11-24 it was a report, not a question, that a stale duplicate held back."""
     assert "The duplicate rule and its exception decide where a report goes too." in _paragraph("Questions.")
+
+
+def test_the_ignored_duplicate_has_no_standing():
+    """Both send as `assistant`, so the one a worker ignores must not still instruct it."""
+    assert "ignore the old one, whose messages then carry no standing, and send to the recent one" in _paragraph(
+        "Questions."
+    )
 
 
 def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
