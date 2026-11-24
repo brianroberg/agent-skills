@@ -386,7 +386,12 @@ def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
 
 
 def test_an_offline_duplicate_never_counts_as_a_second_coordinator():
-    assert "A session listed `offline` never counts as a second one." in _paragraph("Questions.")
+    paragraph = _paragraph("Questions.")
+    sentence = "A session listed `offline` is not a second coordinating session."
+    assert sentence in paragraph
+    assert paragraph.index(sentence) > paragraph.index("If two live sessions carry the coordinating name"), (
+        "it qualifies the duplicate rule, so it follows it"
+    )
 
 
 def test_an_offline_coordinating_session_counts_as_unreachable():
