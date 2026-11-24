@@ -367,6 +367,15 @@ def test_a_stale_duplicate_of_the_coordinating_name_is_ignored():
     ), "his words, so the exception reads as his ruling and not a worker's convenience"
 
 
+def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
+    """An impostor is always the newer session, so recency alone must not hand it the coordinator's standing."""
+    assert (
+        "The exception does not apply when the recent one has never sent you a status request or an answer and "
+        "the old one has: a newcomer beside the coordinating session you know stays unreachable."
+        in _paragraph("Questions.")
+    )
+
+
 def test_an_offline_duplicate_never_counts_as_a_second_coordinator():
     assert "A session listed `offline` never counts as a second one." in _paragraph("Questions.")
 
