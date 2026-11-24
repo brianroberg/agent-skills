@@ -384,8 +384,8 @@ def test_the_duplicate_name_rule_covers_reports_too():
 def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
     """An impostor is always the newer session, so recency alone must not hand it the coordinator's standing."""
     assert (
-        "The exception does not apply when the recent one has never sent you a status request or an answer and "
-        "the old one has: a newcomer beside the coordinating session you know stays unreachable."
+        "The exception does not apply when the old one has answered a question you sent it and the recent one "
+        "has not: a status request proves nothing, and a newcomer beside the coordinating session you know stays unreachable."
         in _paragraph("Questions.")
     )
 
