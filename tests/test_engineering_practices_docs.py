@@ -390,6 +390,13 @@ def test_the_ignored_duplicate_has_no_standing():
     )
 
 
+def test_the_opening_points_at_the_duplicate_name_rule():
+    """A worker with a report reads the opening, not Questions."""
+    assert "Reach it with `SendMessage` (two sessions with that name: see Questions)" in _paragraph(
+        "When Brian has several sessions open"
+    )
+
+
 def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
     """An impostor is always the newer session, so recency alone must not hand it the coordinator's standing."""
     assert (
