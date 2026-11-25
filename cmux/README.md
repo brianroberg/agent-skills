@@ -31,8 +31,8 @@ input does not carry them, and a missing model prints `Claude`. Inside cmux
 With `--clear` it removes the terminal's entry and, if the workspace title is still the
 one it set, hands the title back.
 
-It keeps a cache per terminal and per workspace under `TMPDIR`, so an unchanged line
-makes no cmux call. An entry older than five minutes is sent again, and a cmux call that
+It keeps a cache per terminal and per workspace under `TMPDIR`. With the line and the
+session name unchanged and the workspace in cmux's list, a refresh makes no cmux call. An entry older than five minutes is sent again, and a cmux call that
 failed is not cached, so the next refresh retries it. A failing cmux does not change
 what is printed.
 
@@ -159,6 +159,8 @@ into this repo, both on 2026-11-25. No test covers these:
 - Two sessions prompting at the same moment produced one notification in a trial.
 - An approved permission prompt's sidebar line stays until the turn ends or the next
   prompt is submitted.
+- A named session whose workspace is missing from `workspace list`, or whose list call
+  fails, asks cmux again on each refresh (reproduced in review with a fake cmux).
 
 Removed at Brian's request on 2026-11-25, so not to be brought back from older outputs:
 an icon on the model entry, and `Branch:` and `CWD:` entries. cmux's own branch and
