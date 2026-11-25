@@ -70,14 +70,25 @@ check "empty input prints a placeholder" "Claude" "$(run '')"
 check "null model prints a placeholder" "Claude" "$(run '{"model":null}')"
 
 # 8. Context use follows the effort level, as a whole percent; absent or null, it is left out.
+#    Zero is left out too: Claude Code sends 0 with all-zero token counts when it has no
+#    model reply to count from (after a compaction, until the next reply), and its docs
+#    say to treat that as empty.
 ctx='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":12}}'
 ctx_frac='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":41.6}}'
 ctx_null='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":null}}'
-ctx_only='{"model":{"display_name":"Fable 5.2"},"context_window":{"used_percentage":0}}'
+ctx_only='{"model":{"display_name":"Fable 5.2"},"context_window":{"used_percentage":1}}'
+ctx_compacted='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"total_input_tokens":0,"total_output_tokens":0,"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0},"used_percentage":0,"remaining_percentage":100}}'
+ctx_tiny='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":0.3}}'
 check "context percent follows the effort" "Fable 5.2 · high · Context 12%" "$(run "$ctx")"
 check "context percent is rounded" "Fable 5.2 · high · Context 42%" "$(run "$ctx_frac")"
 check "null context percent is left out" "Fable 5.2 · high" "$(run "$ctx_null")"
-check "zero percent without effort" "Fable 5.2 · Context 0%" "$(run "$ctx_only")"
+check "context percent without effort" "Fable 5.2 · Context 1%" "$(run "$ctx_only")"
+check "zero percent after a compaction is left out" "Fable 5.2 · high" "$(run "$ctx_compacted")"
+check "a percent that rounds to zero is left out" "Fable 5.2 · high" "$(run "$ctx_tiny")"
+: > "$calls"
+run "$ctx_compacted" CMUX_WORKSPACE_ID=WS-5 CMUX_SURFACE_ID=LLLLLLLL-2222 CMUX_BUNDLED_CLI_PATH="$fake" > /dev/null
+check "the sidebar entry leaves out a zero percent too" \
+  "set-status model_LLLLLLLL Fable 5.2 · high --workspace WS-5 --priority 1" "$(cat "$calls")"
 : > "$calls"
 run "$ctx" CMUX_WORKSPACE_ID=WS-4 CMUX_SURFACE_ID=EEEEEEEE-5555 CMUX_BUNDLED_CLI_PATH="$fake" > /dev/null
 check "the sidebar gets the context percent too" \

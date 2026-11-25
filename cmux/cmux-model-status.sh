@@ -62,7 +62,9 @@ fi
 input=$(cat)
 model=$(jq -r '.model.display_name // .model.id // empty' <<<"$input" 2>/dev/null)
 effort=$(jq -r '.effort.level // empty' <<<"$input" 2>/dev/null)
-context=$(jq -r '.context_window.used_percentage | numbers | round' <<<"$input" 2>/dev/null)
+# A zero percent is left out like a missing one: Claude Code sends 0 when it has no model
+# reply to count tokens from (after a compaction, until the next reply).
+context=$(jq -r '.context_window.used_percentage | numbers | round | select(. > 0)' <<<"$input" 2>/dev/null)
 label="${model:-Claude}${effort:+ · $effort}${context:+ · Context $context%}"
 
 if [ -n "$CMUX_WORKSPACE_ID" ]; then
