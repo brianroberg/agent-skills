@@ -18,11 +18,13 @@ This directory is where they are edited. The installed copies are separate files
 ### `cmux-model-status.sh`
 
 As the status line, it reads Claude Code's status JSON on stdin and prints
-`<model> · <effort> · Context N%`, leaving out the parts the input does not carry. Inside
-cmux (`CMUX_WORKSPACE_ID` set) it also:
+`<model> · <effort> · Context N%`. The effort and context parts are left out when the
+input does not carry them, and a missing model prints `Claude`. Inside cmux
+(`CMUX_WORKSPACE_ID` set) it also:
 
 - mirrors that line to one sidebar status entry per terminal, keyed `model_` plus the
-  first 8 characters of the surface id, at priority 1;
+  first 8 characters of the surface id (of the workspace id when `CMUX_SURFACE_ID` is
+  unset), at priority 1;
 - sets the workspace title to the session's name, when the session has one and the
   workspace has no custom title or still has the title this script set.
 
