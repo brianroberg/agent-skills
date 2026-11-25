@@ -30,6 +30,13 @@ and a wrong sentence has the same effect as a wrong line of code.
   `test_no_hardcoded_credentials` catches a literal key in a SKILL.md and nothing else;
   each script's own tests have to pin its output (as `test_script_never_prints_the_key`
   does for `pledges.py`, by pattern, not by execution). Read the script's error paths.
+- **A cmux script that prints, blocks or clears too much.** `cmux/` holds a status line
+  command and hooks that run in each Claude Code session on Brian's MacBook (see
+  `cmux/README.md`). Stdout is an interface there: the status line shows it, Claude Code
+  can inject a hook's stdout, and cmux reads the notification hook's stdout as a policy
+  patch. The `cmux-clear-answered.sh` suite gives the hook a stdin that stays open, to
+  catch a version that waits on it. The copies in this repo are not the installed ones,
+  so a merged change is not live until installed.
 - **Real people in the repo.** Fixtures, examples and issue text use synthetic records
   in the live response shapes. A donor's name, id, amount or address in a tracked file is
   a defect, whatever the branch (Brian, 2026-10-19).
@@ -67,6 +74,6 @@ and a wrong sentence has the same effect as a wrong line of code.
 ## How to run the checks
 
 ```
-uv run pytest tests/ -q -m "not network"     # structure, doc parity, scripts
+uv run pytest tests/ -q -m "not network"     # structure, doc parity, scripts, cmux suites
 uv run pytest tests/test_openapi_sync.py -m network -v   # live spec drift (needs the services)
 ```

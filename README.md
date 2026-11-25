@@ -160,6 +160,9 @@ uv run pytest tests/test_api_coverage.py -v
 # Run OpenAPI sync tests (requires network access)
 uv run pytest tests/test_openapi_sync.py -m network -v
 
+# Run the cmux sidebar script suites (needs bash, jq and git)
+uv run pytest tests/test_cmux_scripts.py -v
+
 # Run all non-network tests
 uv run pytest tests/ -v
 ```
@@ -220,6 +223,8 @@ agent-skills/
 │   ├── email-label/
 │   ├── email-mark-read/
 │   └── email-triage/
+├── cmux/                         # cmux sidebar scripts (status line, hooks); see cmux/README.md
+│   └── tests/                    # Their bash suites, run by tests/test_cmux_scripts.py
 ├── tests/
 │   ├── conftest.py               # Shared test fixtures
 │   ├── api_specs.py              # API endpoint registry
