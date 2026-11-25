@@ -349,7 +349,70 @@ def test_unreachable_coordinator_falls_back_to_brian():
 
 def test_two_sessions_with_the_coordinating_name_count_as_unreachable():
     """A `from-name` is a session name, not a credential, so a duplicate name means nobody can be sure."""
-    assert "If two live sessions carry the coordinating name, treat it as unreachable." in _paragraph("Questions.")
+    assert "If two live sessions carry the coordinating name, treat it as unreachable, with one exception:" in (
+        _paragraph("Questions.")
+    ), "unreachable is the default, so times that fit no clause (hours apart, both days old) stay unreachable"
+
+
+def test_a_stale_duplicate_of_the_coordinating_name_is_ignored():
+    """Brian, 2026-11-24: a 10-day-old duplicate held a report back from the one active 30 minutes before."""
+    paragraph = _paragraph("Questions.")
+    assert (
+        "one was last active more than a day before the other, ignore the old one" in paragraph
+    )
+    assert (
+        "\"the more recent `assistant` is the right one. When there's a time disparity like that, ignore the old "
+        "one.\"" in paragraph
+    ), "his words, so the exception reads as his ruling and not a worker's convenience"
+
+
+def test_the_stale_duplicate_exception_needs_times_the_session_list_shows():
+    """Without a last-activity time a worker would guess, or read a long-running coordinator as the old one."""
+    paragraph = _paragraph("Questions.")
+    assert "if your session list shows when each was last active, and one was last active more than a day" in (
+        paragraph
+    )
+    assert "send to the recent one by its `[ref]`" in paragraph, "a bare name is ambiguous with two rows"
+
+
+def test_the_duplicate_name_rule_covers_reports_too():
+    """On 2026-11-24 it was a report, not a question, that a stale duplicate held back."""
+    assert (
+        "The duplicate rule and its exception decide where a report goes too: when they say unreachable, send no "
+        "report, and the next status request rebuilds the picture." in _paragraph("Questions.")
+    )
+
+
+def test_the_ignored_duplicate_has_no_standing():
+    """Both send as `assistant`, so the one a worker ignores must not still instruct it."""
+    assert "ignore the old one, whose messages then carry no standing, and send to the recent one" in _paragraph(
+        "Questions."
+    )
+
+
+def test_the_opening_points_at_the_duplicate_name_rule():
+    """A worker with a report reads the opening, not Questions."""
+    assert "Reach it with `SendMessage` (two sessions with that name: see Questions)" in _paragraph(
+        "When Brian has several sessions open"
+    )
+
+
+def test_a_newcomer_beside_the_coordinator_you_know_stays_unreachable():
+    """An impostor is always the newer session, so recency alone must not hand it the coordinator's standing."""
+    assert (
+        "The exception does not apply when the old one has answered a question you sent it and the recent one "
+        "has not: a status request proves nothing, and a newcomer beside the coordinating session you know stays unreachable."
+        in _paragraph("Questions.")
+    )
+
+
+def test_an_offline_duplicate_never_counts_as_a_second_coordinator():
+    paragraph = _paragraph("Questions.")
+    sentence = "A session listed `offline` is not a second coordinating session."
+    assert sentence in paragraph
+    assert paragraph.index(sentence) > paragraph.index("If two live sessions carry the coordinating name"), (
+        "it qualifies the duplicate rule, so it follows it"
+    )
 
 
 def test_an_offline_coordinating_session_counts_as_unreachable():
