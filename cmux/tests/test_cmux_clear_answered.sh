@@ -1,7 +1,7 @@
 #!/bin/bash
 # Tests for cmux-clear-answered.sh (installed as ~/.claude/cmux-clear-answered.sh), from the caller's shape: Claude Code runs
 # it as a hook command with one argument ("mark" on Notification; "clear" on
-# UserPromptSubmit, PostToolUse and Stop), a JSON payload on stdin it does not need,
+# UserPromptSubmit, Stop, and PostToolUse of AskUserQuestion), a JSON payload on stdin it does not need,
 # and treats stdout as text to show or inject, so it must print nothing.
 SCRIPT="${1:-$(cd "$(dirname "$0")/.." && pwd)/cmux-clear-answered.sh}"
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
