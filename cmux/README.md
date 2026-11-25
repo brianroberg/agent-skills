@@ -149,16 +149,8 @@ made through an installed path lands in the live clone's tracked file, where
 
 To undo the arrangement, replace each symlink with a copy of the file it points at.
 
-State on 2026-11-25: the installed files are still separate copies, byte-identical to
-the scripts first committed here. Replacing them with symlinks is a separate step after
-that merge, taken with Brian's go-ahead. Until then, `cmp` shows whether a copy has
-drifted:
-
-```bash
-cmp cmux/cmux-model-status.sh   ~/.claude/cmux-model-status.sh
-cmp cmux/cmux-clear-answered.sh ~/.claude/cmux-clear-answered.sh
-cmp cmux/drop-idle-notice.sh    ~/.config/cmux/drop-idle-notice.sh
-```
+State on 2026-11-25: set up on Brian's MacBook after the scripts were merged, with the
+live clone at `~/.local/share/agent-skills-live`.
 
 ## For a maintainer
 
@@ -175,7 +167,8 @@ into this repo, both on 2026-11-25. No test covers these:
 
 - Two named sessions in one workspace share one workspace title, and each renames it to
   its own name when its status line refreshes, so the title alternates (reproduced in
-  review with a fake cmux).
+  review with a fake cmux). Accepted (Brian, 2026-11-25): he runs one agent session
+  per workspace, and a plain terminal beside it runs no status line.
 - A session that dies without `SessionEnd` leaves its sidebar entry and title behind.
 - Two sessions prompting at the same moment produced one notification in a trial.
 - An approved permission prompt's sidebar line stays until the turn ends or the next
