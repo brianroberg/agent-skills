@@ -21,9 +21,9 @@ a change goes live when it is merged and that clone is pulled.
 As the status line, it reads Claude Code's status JSON on stdin and prints
 `<model> · <effort> · Context N%`. The effort and context parts are left out when the
 input does not carry them, and a missing model prints `Claude`. A context percentage
-that rounds to zero is left out as well: Claude Code sends zero when it has no model
-reply to count tokens from, which is the case after a compaction until the next reply,
-so `/context` can show a figure while the status line shows none. Inside cmux
+that rounds to zero is left out as well: after a compaction, until the next model reply,
+Claude Code sends zero, so `/context` can show a figure while the status line shows
+none. Inside cmux
 (`CMUX_WORKSPACE_ID` set) it also:
 
 - mirrors that line to one sidebar status entry per terminal, keyed `model_` plus the

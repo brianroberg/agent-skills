@@ -70,9 +70,8 @@ check "empty input prints a placeholder" "Claude" "$(run '')"
 check "null model prints a placeholder" "Claude" "$(run '{"model":null}')"
 
 # 8. Context use follows the effort level, as a whole percent; absent or null, it is left out.
-#    Zero is left out too: Claude Code sends 0 with all-zero token counts when it has no
-#    model reply to count from (after a compaction, until the next reply), and its docs
-#    say to treat that as empty.
+#    Zero is left out too: after a compaction, until the next model reply, Claude Code
+#    sends 0 with all-zero token counts, and its docs say to treat that as empty.
 ctx='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":12}}'
 ctx_frac='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":41.6}}'
 ctx_null='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":null}}'
