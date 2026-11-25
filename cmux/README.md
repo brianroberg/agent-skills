@@ -163,6 +163,7 @@ into this repo, both on 2026-11-25. No test covers these:
   fails, asks cmux again on each refresh (reproduced in review with a fake cmux).
 - `--clear` removes its caches before calling cmux and does not check the result, so if
   cmux is unavailable at `SessionEnd` the entry and the title stay behind.
+- A session name containing a newline does not fit the two-line title cache.
 
 Removed at Brian's request on 2026-11-25, so not to be brought back from older outputs:
 an icon on the model entry, and `Branch:` and `CWD:` entries. cmux's own branch and
