@@ -4,8 +4,9 @@ Three small bash scripts that connect Claude Code to the cmux sidebar on Brian's
 with their tests. They are not skills: they are installed by hand as a status line
 command, as Claude Code hooks and as a cmux notification hook.
 
-This directory is where they are edited. The installed copies are separate files (see
-[Installing](#installing)), so a change here does nothing until it is installed.
+This directory is where they are edited. The installed paths are meant to be symlinks
+into a second clone of this repo that stays on `main` (see [Installing](#installing)), so
+a change goes live when it is merged and that clone is pulled.
 
 ## The scripts
 
@@ -122,16 +123,36 @@ the script.
 
 ## Installing
 
-The installed files are copies, not symlinks into this checkout. A symlink would make
-whichever branch is checked out here, a half-finished one included, the status line and
-hooks of the sessions running at the time. After a change is merged and pulled:
+There is one copy of each script, the tracked one. The installed paths are symlinks into
+a **live clone**: a second clone of this repo that stays on `main` and is not used for
+work (Brian, 2026-11-25). The working checkout is not the target, because a symlink into
+it would make whichever branch is checked out there, a half-finished one included, the
+status line and hooks of the sessions running at the time.
+
+One-time setup, with `LIVE` as the live clone's path (for example
+`~/.local/share/agent-skills-live`):
 
 ```bash
-install -m 755 cmux/cmux-model-status.sh cmux/cmux-clear-answered.sh ~/.claude/
-install -m 755 cmux/drop-idle-notice.sh ~/.config/cmux/
+git clone https://github.com/brianroberg/agent-skills.git "$LIVE"
+ln -sf "$LIVE/cmux/cmux-model-status.sh"   ~/.claude/cmux-model-status.sh
+ln -sf "$LIVE/cmux/cmux-clear-answered.sh" ~/.claude/cmux-clear-answered.sh
+ln -sf "$LIVE/cmux/drop-idle-notice.sh"    ~/.config/cmux/drop-idle-notice.sh
 ```
 
-To see whether an installed copy has drifted from the repo:
+The settings entries above keep pointing at the installed paths, so they do not change.
+
+To make a merged change live: `git -C "$LIVE" pull`.
+
+Edit the scripts in a working checkout, test-first, and deliver by pull request. An edit
+made through an installed path lands in the live clone's tracked file, where
+`git -C "$LIVE" status` shows it.
+
+To undo the arrangement, replace each symlink with a copy of the file it points at.
+
+State on 2026-11-25: the installed files are still separate copies, byte-identical to
+the scripts first committed here. Replacing them with symlinks is a separate step after
+that merge, taken with Brian's go-ahead. Until then, `cmp` shows whether a copy has
+drifted:
 
 ```bash
 cmp cmux/cmux-model-status.sh   ~/.claude/cmux-model-status.sh

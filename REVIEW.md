@@ -35,8 +35,9 @@ and a wrong sentence has the same effect as a wrong line of code.
   `cmux/README.md`). Stdout is an interface there: the status line shows it, Claude Code
   can inject a hook's stdout, and cmux reads the notification hook's stdout as a policy
   patch. The `cmux-clear-answered.sh` suite gives the hook a stdin that stays open, to
-  catch a version that waits on it. The copies in this repo are not the installed ones,
-  so a merged change is not live until installed.
+  catch a version that waits on it. The installed paths are meant to be symlinks
+  into a second clone that stays on `main`, so a merged change is live once that clone is
+  pulled (`cmux/README.md`, Installing).
 - **Real people in the repo.** Fixtures, examples and issue text use synthetic records
   in the live response shapes. A donor's name, id, amount or address in a tracked file is
   a defect, whatever the branch (Brian, 2026-10-19).
