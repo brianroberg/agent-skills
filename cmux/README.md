@@ -32,8 +32,8 @@ With `--clear` it removes the terminal's entry and, if the workspace title is st
 one it set, hands the title back.
 
 It keeps a cache per terminal and per workspace under `TMPDIR`. With the line and the
-session name unchanged and the workspace in cmux's list, a refresh makes no cmux call. An entry older than five minutes is sent again, and a cmux call that
-failed is not cached, so the next refresh retries it. A failing cmux does not change
+session name unchanged and the workspace in cmux's list, a refresh makes no cmux call. An entry older than five minutes is sent again, and a `set-status` call
+that failed is not cached, so the next refresh retries it. A failing cmux does not change
 what is printed.
 
 Fields read from the status JSON: `model.display_name`, `model.id`, `effort.level`,
@@ -161,6 +161,8 @@ into this repo, both on 2026-11-25. No test covers these:
   prompt is submitted.
 - A named session whose workspace is missing from `workspace list`, or whose list call
   fails, asks cmux again on each refresh (reproduced in review with a fake cmux).
+- `--clear` removes its caches before calling cmux and does not check the result, so if
+  cmux is unavailable at `SessionEnd` the entry and the title stay behind.
 
 Removed at Brian's request on 2026-11-25, so not to be brought back from older outputs:
 an icon on the model entry, and `Branch:` and `CWD:` entries. cmux's own branch and
