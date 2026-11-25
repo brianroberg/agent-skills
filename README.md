@@ -160,7 +160,7 @@ uv run pytest tests/test_api_coverage.py -v
 # Run OpenAPI sync tests (requires network access)
 uv run pytest tests/test_openapi_sync.py -m network -v
 
-# Run the cmux sidebar script suites (needs bash, jq and git)
+# Run the cmux sidebar script suites (needs bash and jq)
 uv run pytest tests/test_cmux_scripts.py -v
 
 # Run all non-network tests

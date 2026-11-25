@@ -4,7 +4,8 @@ Each suite in ``cmux/tests/`` takes the path of the script under test as its fir
 argument, prints one ``ok`` or ``FAIL`` line per case and exits with the number of
 failures. The suites run the script under ``env -i`` with a fake ``cmux`` that records
 its arguments, so no real cmux, Claude Code session or settings file is involved. They
-need ``bash``, ``jq`` and ``git`` on ``/usr/bin:/bin`` or in Homebrew's bin directory.
+need ``bash`` and ``jq`` (in ``/usr/bin``, ``/opt/homebrew/bin`` or ``/usr/local/bin``); one
+fixture uses ``git`` when it is there.
 """
 
 import subprocess

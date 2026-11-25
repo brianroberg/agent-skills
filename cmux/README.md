@@ -114,7 +114,7 @@ failures. The script under test runs under `env -i` with `PATH=/usr/bin:/bin`, a
 a case sets the cmux variables it points `CMUX_BUNDLED_CLI_PATH` at a fake `cmux` that
 records its arguments in place of the real one. They need
 `jq` (in `/usr/bin`, `/opt/homebrew/bin` or `/usr/local/bin`; the scripts add the last
-two to `PATH` themselves) and `git` for one fixture. Fixture values are synthetic
+two to `PATH` themselves). One fixture uses `git` when it is there. Fixture values are synthetic
 (workspace ids like `WS-1`, made-up surface ids, a model named `M`).
 
 Change a script test-first: add the failing case to its suite, watch it fail, then edit
