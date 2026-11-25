@@ -77,12 +77,14 @@ ctx_frac='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"conte
 ctx_null='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":null}}'
 ctx_only='{"model":{"display_name":"Fable 5.2"},"context_window":{"used_percentage":1}}'
 ctx_compacted='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"total_input_tokens":0,"total_output_tokens":0,"context_window_size":1000000,"current_usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0},"used_percentage":0,"remaining_percentage":100}}'
+ctx_half='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":0.5}}'
 ctx_tiny='{"model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"context_window":{"used_percentage":0.3}}'
 check "context percent follows the effort" "Fable 5.2 · high · Context 12%" "$(run "$ctx")"
 check "context percent is rounded" "Fable 5.2 · high · Context 42%" "$(run "$ctx_frac")"
 check "null context percent is left out" "Fable 5.2 · high" "$(run "$ctx_null")"
 check "context percent without effort" "Fable 5.2 · Context 1%" "$(run "$ctx_only")"
 check "zero percent after a compaction is left out" "Fable 5.2 · high" "$(run "$ctx_compacted")"
+check "a percent that rounds to one is shown" "Fable 5.2 · high · Context 1%" "$(run "$ctx_half")"
 check "a percent that rounds to zero is left out" "Fable 5.2 · high" "$(run "$ctx_tiny")"
 : > "$calls"
 run "$ctx_compacted" CMUX_WORKSPACE_ID=WS-5 CMUX_SURFACE_ID=LLLLLLLL-2222 CMUX_BUNDLED_CLI_PATH="$fake" > /dev/null
