@@ -149,10 +149,12 @@ cmp cmux/drop-idle-notice.sh    ~/.config/cmux/drop-idle-notice.sh
   session that wrote these scripts found that `workspace list` returns nothing when the
   caller's surface id is not real. Use the suites, or a real terminal.
 
-Known limits, as observed by the session that wrote the scripts on 2026-11-25. No test
-covers these:
+Known limits, from the session that wrote the scripts and from the review of the move
+into this repo, both on 2026-11-25. No test covers these:
 
-- Two sessions in one workspace share one workspace title.
+- Two named sessions in one workspace share one workspace title, and each renames it to
+  its own name when its status line refreshes, so the title alternates (reproduced in
+  review with a fake cmux).
 - A session that dies without `SessionEnd` leaves its sidebar entry and title behind.
 - Two sessions prompting at the same moment produced one notification in a trial.
 - An approved permission prompt's sidebar line stays until the turn ends or the next
