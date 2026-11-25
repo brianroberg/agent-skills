@@ -84,7 +84,7 @@ check "the sidebar gets the context percent too" \
   "set-status model_EEEEEEEE Fable 5.2 · high · Context 12% --workspace WS-4 --priority 1" "$(cat "$calls")"
 
 # 9. --clear (the SessionEnd hook): removes this surface's pill and cache, prints nothing,
-#    does not wait on stdin, and the next status line refresh sets the pill again.
+#    and the next status line refresh sets the pill again. (Stdin is checked in 9b.)
 clear_run() { env -i PATH="/usr/bin:/bin" HOME="$HOME" TMPDIR="$work" "$@" "$SCRIPT" --clear < /dev/null 2>"$work/stderr"; }
 : > "$calls"
 out=$(clear_run CMUX_WORKSPACE_ID=WS-4 CMUX_SURFACE_ID=EEEEEEEE-5555 CMUX_BUNDLED_CLI_PATH="$fake"); rc=$?
@@ -100,6 +100,15 @@ check "--clear outside cmux does not call cmux" "" "$(cat "$calls")"
 check "--clear outside cmux exits 0" "0" "$rc"
 clear_run CMUX_WORKSPACE_ID=WS-4 CMUX_SURFACE_ID=EEEEEEEE-5555 CMUX_BUNDLED_CLI_PATH="$work/broken"; rc=$?
 check "--clear with a failing cmux exits 0 quietly" "0" "$rc$(cat "$work/stderr")"
+
+# 9b. A hook's stdin is a pipe that may stay open, so --clear gets a FIFO that never
+#     reaches end of file; a run that waits on it is killed after 2 s and reports 143.
+mkfifo "$work/fifo"; exec 9<>"$work/fifo"
+env -i PATH="/usr/bin:/bin" HOME="$HOME" TMPDIR="$work" CMUX_WORKSPACE_ID=WS-4 CMUX_SURFACE_ID=EEEEEEEE-5555 \
+  CMUX_BUNDLED_CLI_PATH="$fake" "$SCRIPT" --clear < "$work/fifo" > /dev/null 2>&1 &
+pid=$!; ( sleep 2; kill "$pid" 2>/dev/null ) & wd=$!
+wait "$pid" 2>/dev/null; rc=$?; kill "$wd" 2>/dev/null; wait "$wd" 2>/dev/null
+check "--clear does not wait on an open stdin" "0" "$rc"
 
 # 10. Workspace title: a named session's name becomes the workspace title while it runs,
 #     and --clear hands the title back. A title the script did not set is left alone.
